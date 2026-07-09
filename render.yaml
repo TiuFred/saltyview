@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: casa-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    preDeployCommand: npx prisma migrate deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Preencha no dashboard do Render após criar o banco no Neon
+      - key: DATABASE_URL
+        sync: false
+      # Preencha no dashboard do Render após criar o banco no Upstash
+      - key: REDIS_URL
+        sync: false
+      # URL do frontend publicado no Vercel (ex: https://casa-web.vercel.app)
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: SEED_ADMIN_NAME
+        value: Admin
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_ADMIN_PIN
+        sync: false
+      - key: SMARTTHINGS_PAT
+        sync: false
+      - key: LG_THINQ_PAT
+        sync: false
+      - key: LG_THINQ_CLIENT_ID
+        sync: false
+      - key: LG_THINQ_COUNTRY
+        value: BR

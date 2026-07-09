@@ -10,6 +10,8 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
   });
 
-  await app.listen(process.env.API_PORT ?? 3001);
+  // PORT é a convenção usada por PaaS (Render/Railway/Heroku) que injetam uma porta dinâmica;
+  // API_PORT é o fallback usado em dev local (.env).
+  await app.listen(process.env.PORT ?? process.env.API_PORT ?? 3001);
 }
 void bootstrap();
