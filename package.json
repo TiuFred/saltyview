@@ -1,0 +1,23 @@
+{
+  "name": "casa",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev --workspace=@casa/api",
+    "dev:web": "npm run dev --workspace=@casa/web",
+    "build": "npm run build --workspace=@casa/api && npm run build --workspace=@casa/web",
+    "test": "npm run test --workspace=@casa/api",
+    "test:e2e": "npm run test:e2e --workspace=@casa/api",
+    "lint": "npm run lint --workspace=@casa/api",
+    "prisma:generate": "npm run prisma:generate --workspace=@casa/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace=@casa/api",
+    "prisma:seed": "npm run prisma:seed --workspace=@casa/api"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

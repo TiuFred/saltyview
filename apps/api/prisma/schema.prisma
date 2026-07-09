@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DeviceType {
+  TV
+  AC
+}
+
+enum DeviceProviderType {
+  SMARTTHINGS
+  LG_THINQ
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  pinHash      String?
+  createdAt    DateTime @default(now())
+
+  deviceLogs DeviceLog[]
+
+  @@map("users")
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  devices Device[]
+
+  @@map("rooms")
+}
+
+model Device {
+  id         String             @id @default(uuid())
+  name       String
+  type       DeviceType
+  provider   DeviceProviderType
+  externalId String?
+  roomId     String?
+  lastState  Json?
+  online     Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  room Room?       @relation(fields: [roomId], references: [id])
+  logs DeviceLog[]
+
+  @@map("devices")
+}
+
+model DeviceLog {
+  id        String   @id @default(uuid())
+  deviceId  String
+  userId    String
+  action    String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([deviceId])
+  @@map("device_logs")
+}
