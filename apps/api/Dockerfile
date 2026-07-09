@@ -24,4 +24,4 @@ WORKDIR /app/apps/api
 EXPOSE 3001
 # Migrations e seed (idempotentes via upsert) rodam a cada start do container —
 # necessário porque o plano free do Render não tem "pre-deploy command" separado.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/src/main.js"]
