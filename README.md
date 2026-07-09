@@ -1,20 +1,181 @@
-# Casa — Central de Automação Residencial
+# Casa — Central de Automação Residencial 🏠
 
-Sistema próprio de automação residencial (sem depender da UI padrão do Home Assistant), com
-dashboard web moderno e integração direta com as APIs oficiais dos fabricantes dos aparelhos.
+Sistema próprio de automação residencial (sem depender da UI padrão do Home Assistant), com dashboard web moderno e integração direta com as APIs oficiais dos fabricantes dos aparelhos.
 
-## Escopo da Fase 1
+## ✨ O que foi implementado
 
-- Dashboard geral (sem telas por cômodo ainda) com login multi-usuário.
-- Controle de 2 dispositivos: **TV Samsung QN75QEF1AGXZD** (via SmartThings) e **Ar-condicionado LG**
-  (via LG ThinQ Connect).
-- Tudo operando em rede local, sem exposição à internet.
-- Cômodos, cenas e automações (editor SE/ENTÃO) ficam para as próximas fases — o schema do banco já
-  está preparado para elas (`Room` já modelado).
+### ✅ Fase 1 (Completa)
+- Dashboard web com login **multi-usuário PIN-based** (4 dígitos)
+- Controle de **2 tipos de dispositivos**:
+  - **TV Samsung** (via SmartThings SDK oficial)
+  - **Ar-condicionado LG** (via LG ThinQ Connect SDK oficial)
+- **Device Discovery**: descoberta automática de devices na conta do usuário
+- **Device Management** (admin-only):
+  - Renomear dispositivos
+  - Deletar dispositivos
+  - Sincronizar estado em tempo real
+- **AC Remote Control**: interface de controle remoto redesenhada com design Samsung
+- **Autenticação JWT** com access (15min) + refresh (7 dias) tokens
+- **Realtime Updates**: Socket.IO para refletir mudanças de estado instantaneamente
+- **Admin vs User Roles**: controles administrativos restritos
 
-## Arquitetura
+### 🎯 Escopo
+- Tudo operando em rede local, sem exposição à internet
+- Cômodos, cenas e automações (SE/ENTÃO) ficam para próximas fases — schema do banco já preparado
 
-Monorepo com npm workspaces:
+## 🏗️ Stack Técnico Completo
+
+### Backend (NestJS 11 + TypeScript)
+```
+API (port 3001)
+├── Auth Module
+│   ├── PIN-based login (bcrypt hashed)
+│   ├── JWT strategy (access + refresh tokens)
+│   └── User listing for login UI
+├── Devices Module
+│   ├── Device CRUD (create, read, update, delete)
+│   ├── Device discovery (SmartThings + LG ThinQ)
+│   ├── Command execution via providers
+│   └── Device state sync + logs
+├── Integrations
+│   ├── SmartThingsProvider (Samsung TV/AC)
+│   │   ├── Device discovery with capability detection
+│   │   ├── Type inference (TV vs AC based on capabilities)
+│   │   ├── Power control, volume, mute, input, app launch
+│   │   └── AC: mode, fan speed, temperature, swing
+│   └── LgThinqProvider (LG AC)
+│       ├── Device discovery
+│       ├── Power control
+│       └── Temperature, mode, fan speed, swing
+├── Realtime Module (Socket.IO)
+│   └── Push updates on device state changes
+├── Database (Prisma 6 + PostgreSQL 16)
+│   ├── User (id, name, email, passwordHash, pinHash)
+│   ├── Device (id, name, type, provider, externalId, state, online)
+│   └── DeviceLog (device activity history)
+└── Cache (Redis)
+    └── Device state caching + session store
+```
+
+### Frontend (Next.js 16 + React 19 + TypeScript)
+```
+Web App (port 3000)
+├── Login Page
+│   ├── User dropdown (fetched from API)
+│   └── 4-digit PIN entry (auto-focus between fields)
+├── Dashboard
+│   ├── Device list (with realtime status)
+│   ├── Device discovery section (SmartThings + LG ThinQ)
+│   ├── Device cards (power toggle, name, status)
+│   └── Admin controls (rename, delete)
+├── AC Remote Control (/remote/[deviceId])
+│   ├── Large display showing temperature/mode
+│   ├── Power button (red)
+│   ├── Mode selector (cycle: cool/dry/fan/auto/heat)
+│   ├── Temperature controls (+/-)
+│   ├── Fan speed controls
+│   └── Swing toggle
+└── Realtime Engine
+    └── Socket.IO client for instant updates
+```
+
+### Shared Packages
+```
+packages/
+├── shared-types/
+│   ├── Auth DTOs (PinLoginRequestDto, AuthTokensDto)
+│   ├── Device DTOs (DeviceDto, CreateDeviceDto, UpdateDeviceNameDto)
+│   ├── Command types (ACCommand, TVCommand)
+│   └── State types (ACState, TVState)
+└── device-contracts/
+    └── DeviceProvider interface (for integrations)
+```
+
+### Database Schema (Prisma)
+```sql
+User
+  - id (UUID)
+  - name (String, for PIN login)
+  - email (String, unique)
+  - passwordHash (String, legacy)
+  - pinHash (String, bcrypt)
+  - createdAt/updatedAt
+
+Device
+  - id (UUID)
+  - name (String)
+  - type ('TV' | 'AC')
+  - provider ('SMARTTHINGS' | 'LG_THINQ')
+  - externalId (String, from provider API)
+  - state (JSON)
+  - online (Boolean)
+  - createdAt/updatedAt
+
+DeviceLog
+  - id (UUID)
+  - deviceId (FK)
+  - action (String)
+  - result (String)
+  - createdAt
+```
+
+## 🔐 Autenticação & Segurança
+
+### Login Flow
+1. **User selects name** from dropdown (fetched from `GET /auth/users`)
+2. **User enters 4-digit PIN** (0000-9999)
+3. API validates PIN with bcrypt compare against `user.pinHash`
+4. **JWT tokens issued**: access (15min) + refresh (7 days)
+5. Tokens stored in localStorage, included in all API requests
+
+### Password Security
+- PINs hashed with **bcrypt (rounds: 12)**
+- Passwords also bcrypt'd (for legacy email/password flow)
+- JWT secrets: unique, strong secrets required (`openssl rand -hex 32`)
+
+### Admin Authorization
+- Admin check on: device rename, device delete operations
+- Uses email-based admin list (hardcoded or configurable)
+- Respects user roles for UI visibility
+
+## 🔌 Integrations & Device Discovery
+
+### SmartThings (Samsung)
+- **Discovery**: `GET /devices/smartthings-available` queries all devices with 'switch' capability
+- **Type Inference**: 
+  - Has `audioVolume` + `mediaInputSource` → **TV**
+  - Has `airConditionerMode` + `fanMode` → **AC**
+  - Default: TV
+- **Commands**:
+  - **TV**: power, volume, mute, input, launchApp
+  - **AC**: power, temperature, mode, fanSpeed, swing
+- **State Sync**: polling via `refreshDevice(id)` or webhook (not yet implemented)
+
+### LG ThinQ
+- **Discovery**: `GET /devices/thinq-available` queries all devices, infers as AC
+- **Commands**: power, temperature, mode, fanSpeed, swing
+- **State Sync**: polling via `refreshDevice(id)`
+- **SDK**: `thinqconnect` official SDK from LG Developer Site
+
+## 🚀 Features Implemented
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| PIN-based login | ✅ | `auth.service.ts`, `login/page.tsx` |
+| Multi-user support | ✅ | `users.service.ts`, auth dropdown |
+| Device discovery | ✅ | `devices.service.ts`, dashboard UI |
+| Device creation | ✅ | `devices.controller.ts`, dashboard UI |
+| Device renaming (admin) | ✅ | `devices.service.ts`, `DeviceCard.tsx` |
+| Device deletion (admin) | ✅ | `devices.service.ts`, `DeviceCard.tsx` |
+| Device commands | ✅ | `devices.controller.ts`, remote controls |
+| AC Remote UI | ✅ | `ACRemoteControl.tsx` |
+| Realtime updates | ✅ | `realtime.gateway.ts`, WebSocket |
+| Device logs | ✅ | `logs.service.ts` |
+| SmartThings integration | ✅ | `smartthings.provider.ts` |
+| LG ThinQ integration | ✅ | `lg-thinq.provider.ts` |
+| Type inference | ✅ | `smartthings.provider.ts` |
+
+## 📊 Arquitetura
 
 ```
 casa/
