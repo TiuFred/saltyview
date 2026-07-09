@@ -12,6 +12,7 @@ import type {
   UpdateDeviceIconDto,
   UpdateDeviceNameDto,
   UpdateTagDto,
+  UpdateUserPinDto,
   UserSummaryDto,
 } from '@casa/shared-types';
 
@@ -104,4 +105,7 @@ export const apiClient = {
     request<DeviceDto>(`/devices/${deviceId}/commands`, { method: 'POST', body: JSON.stringify(command) }, token),
 
   deviceLogs: (token: string, deviceId: string) => request<DeviceLogDto[]>(`/devices/${deviceId}/logs`, {}, token),
+
+  updateUserPin: (token: string, userId: string, payload: UpdateUserPinDto) =>
+    request<UserSummaryDto>(`/users/${userId}/pin`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
 };

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -18,8 +18,8 @@ export class UsersService {
     return this.prisma.user.findFirst({ where: { name } });
   }
 
-  // O admin não aparece no seletor de perfis (tela de login pública) — o acesso dele é só
-  // pelo login discreto de e-mail/senha, não pela lista de nomes das pessoas da casa.
+  // O admin não aparece no seletor de perfis (tela de login pública) — o acesso dele é
+  // só pelo link "Entrar como admin", não pela lista de nomes das pessoas da casa.
   listUsers() {
     return this.prisma.user.findMany({
       where: { email: { not: this.config.get<string>('SEED_ADMIN_EMAIL') } },
@@ -50,5 +50,19 @@ export class UsersService {
 
   findById(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async updatePin(id: string, pin: string) {
+    const existingUser = await this.prisma.user.findUnique({ where: { id } });
+    if (!existingUser) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const pinHash = await bcrypt.hash(pin, 12);
+    return this.prisma.user.update({
+      where: { id },
+      data: { pinHash },
+      select: { id: true, name: true },
+    });
   }
 }

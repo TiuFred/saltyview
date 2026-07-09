@@ -87,6 +87,10 @@ export interface AssignDeviceTagsDto {
   tagIds: string[];
 }
 
+export interface UpdateUserPinDto {
+  pin: string;
+}
+
 export interface ProviderDeviceDto {
   id: string;
   name: string;

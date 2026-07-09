@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { CreateDeviceDto, DeviceType, ProviderDeviceDto, TagDto } from '@casa/shared-types';
+import type { CreateDeviceDto, DeviceType, ProviderDeviceDto, TagDto, UserSummaryDto } from '@casa/shared-types';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ACCommand, DeviceCommand, DeviceDto, TVCommand } from '@casa/shared-types';
@@ -12,6 +12,7 @@ import { TVCard } from '@/components/devices/TVCard';
 import { ACCard } from '@/components/devices/ACCard';
 import { TagFilterBar } from '@/components/tags/TagFilterBar';
 import { TagManagerModal } from '@/components/tags/TagManagerModal';
+import { UserPinManagerModal } from '@/components/users/UserPinManagerModal';
 
 export default function DashboardPage() {
   const { user, accessToken, loading, logout } = useAuth();
@@ -29,6 +30,8 @@ export default function DashboardPage() {
   const [tags, setTags] = useState<TagDto[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
+  const [householdUsers, setHouseholdUsers] = useState<UserSummaryDto[]>([]);
+  const [pinManagerOpen, setPinManagerOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -64,6 +67,20 @@ export default function DashboardPage() {
   useEffect(() => {
     loadTags();
   }, [loadTags]);
+
+  const loadHouseholdUsers = useCallback(async () => {
+    if (!accessToken || !isAdmin) return;
+    try {
+      const list = await apiClient.listUsers();
+      setHouseholdUsers(list);
+    } catch {
+      setErrorMessage('Não foi possível carregar as pessoas.');
+    }
+  }, [accessToken, isAdmin]);
+
+  useEffect(() => {
+    loadHouseholdUsers();
+  }, [loadHouseholdUsers]);
 
   const loadAvailableLgDevices = useCallback(async () => {
     if (!accessToken || !isAdmin) return;
@@ -230,6 +247,11 @@ export default function DashboardPage() {
     return apiClient.getTagUsage(accessToken, tagId);
   }
 
+  async function updateUserPin(userId: string, pin: string) {
+    if (!accessToken) return;
+    await apiClient.updateUserPin(accessToken, userId, { pin });
+  }
+
   function toggleTagFilter(tagId: string) {
     setSelectedTagId((prev) => (prev === tagId ? null : tagId));
   }
@@ -275,13 +297,22 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <TagFilterBar tags={tags} selectedTagId={selectedTagId} onToggle={toggleTagFilter} onClear={() => setSelectedTagId(null)} />
         {isAdmin && (
-          <button
-            type="button"
-            onClick={() => setTagManagerOpen(true)}
-            className="rounded-xl border border-surface-border px-3 py-1.5 text-xs text-muted transition hover:text-foreground"
-          >
-            Gerenciar tags
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPinManagerOpen(true)}
+              className="rounded-xl border border-surface-border px-3 py-1.5 text-xs text-muted transition hover:text-foreground"
+            >
+              Gerenciar PINs
+            </button>
+            <button
+              type="button"
+              onClick={() => setTagManagerOpen(true)}
+              className="rounded-xl border border-surface-border px-3 py-1.5 text-xs text-muted transition hover:text-foreground"
+            >
+              Gerenciar tags
+            </button>
+          </div>
         )}
       </div>
 
@@ -426,6 +457,15 @@ export default function DashboardPage() {
           onRename={renameTag}
           onDelete={deleteTag}
           getUsage={getTagUsage}
+        />
+      )}
+
+      {isAdmin && (
+        <UserPinManagerModal
+          open={pinManagerOpen}
+          onClose={() => setPinManagerOpen(false)}
+          users={householdUsers}
+          onUpdatePin={updateUserPin}
         />
       )}
 
