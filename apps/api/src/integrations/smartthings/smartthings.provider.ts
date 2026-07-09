@@ -36,7 +36,9 @@ export class SmartThingsProvider implements DeviceProvider {
     return devices.map((device) => ({
       id: device.deviceId,
       name: device.label ?? device.deviceId,
-      type: this.inferDeviceType(device.capabilities) as DeviceType,
+      type: this.inferDeviceType(
+        device.components?.flatMap((component) => component.capabilities),
+      ),
     }));
   }
 
