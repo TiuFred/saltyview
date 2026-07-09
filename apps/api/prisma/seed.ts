@@ -46,6 +46,12 @@ async function main() {
   });
 
   console.log('Dispositivos da Fase 1 (TV Samsung, AC LG) prontos — vincule o externalId depois de cadastrar cada aparelho no app do fabricante.');
+
+  const tagNames = ['LG', 'Samsung', 'Ar Condicionado', 'Televisão', 'Sala', 'Quartos'];
+  for (const name of tagNames) {
+    await prisma.tag.upsert({ where: { name }, update: {}, create: { name } });
+  }
+  console.log(`Tags padrão prontas: ${tagNames.join(', ')}`);
 }
 
 main()

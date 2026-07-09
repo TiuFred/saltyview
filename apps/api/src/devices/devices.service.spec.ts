@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -16,10 +15,12 @@ describe('DevicesService', () => {
     provider: 'SMARTTHINGS',
     externalId: 'external-1',
     roomId: null,
+    icon: null,
     lastState: null,
     online: false,
     createdAt: new Date(),
     updatedAt: new Date(),
+    tags: [],
   };
 
   const unlinkedDevice = { ...linkedDevice, id: 'device-ac', externalId: null };
@@ -36,7 +37,6 @@ describe('DevicesService', () => {
     listDevices: jest.fn(),
   };
   const providers = { get: jest.fn(() => provider) };
-  const config = { get: jest.fn((key: string, defaultValue?: string) => ({ SEED_ADMIN_EMAIL: 'admin@example.com' }[key] ?? defaultValue)) };
 
   let service: DevicesService;
 
@@ -48,14 +48,12 @@ describe('DevicesService', () => {
     provider.isOnline = jest.fn();
     provider.listDevices = jest.fn();
     providers.get = jest.fn(() => provider) as never;
-    config.get = jest.fn((key: string, defaultValue?: string) => ({ SEED_ADMIN_EMAIL: 'admin@example.com' }[key] ?? defaultValue)) as never;
     service = new DevicesService(
       prisma as never,
       redis as never,
       logs as never,
       realtime as never,
       providers as never,
-      config as never,
     );
   });
 
@@ -128,27 +126,28 @@ describe('DevicesService', () => {
           externalId: 'lg-1',
           online: false,
         },
+        include: { tags: true },
       });
       expect(result.externalId).toBe('lg-1');
     });
   });
 
+  // Autorização de admin (quem pode renomear/remover/editar ícone/tags) agora é responsabilidade
+  // do AdminGuard no controller, não mais do DevicesService — por isso não há mais teste de
+  // rejeição de não-admin aqui.
   describe('updateName', () => {
-    it('renames a device when the user is the admin', async () => {
+    it('renames a device', async () => {
       prisma.device.findUnique.mockResolvedValueOnce(linkedDevice);
       prisma.device.update.mockResolvedValueOnce({ ...linkedDevice, name: 'TV Nova' });
 
-      const result = await service.updateName('device-tv', { name: 'TV Nova' }, 'admin@example.com');
+      const result = await service.updateName('device-tv', { name: 'TV Nova' });
 
       expect(prisma.device.update).toHaveBeenCalledWith({
         where: { id: 'device-tv' },
         data: { name: 'TV Nova' },
+        include: { tags: true },
       });
       expect(result.name).toBe('TV Nova');
-    });
-
-    it('rejects renames from non-admin users', async () => {
-      await expect(service.updateName('device-tv', { name: 'TV Nova' }, 'user@example.com')).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -202,6 +201,7 @@ describe('DevicesService', () => {
         linkedDevice.externalId,
         { type: 'power', value: 'on' },
       );
+      expect(provider.fetchState).toHaveBeenCalledWith(linkedDevice.externalId, linkedDevice.type);
       expect(logs.record).toHaveBeenCalledWith(
         linkedDevice.id,
         'user-1',

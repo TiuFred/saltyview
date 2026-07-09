@@ -1,4 +1,4 @@
-import type { DeviceCommand, DeviceProviderType, DeviceState, ProviderDeviceDto } from '@casa/shared-types';
+import type { DeviceCommand, DeviceProviderType, DeviceState, DeviceType, ProviderDeviceDto } from '@casa/shared-types';
 
 // Contrato que todo adapter de fabricante (SmartThings, LG ThinQ, futuros...) deve implementar.
 // O domínio de devices depende só desta interface, nunca de um SDK de fabricante diretamente —
@@ -6,7 +6,9 @@ import type { DeviceCommand, DeviceProviderType, DeviceState, ProviderDeviceDto 
 export interface DeviceProvider {
   readonly providerType: DeviceProviderType;
 
-  fetchState(externalId: string): Promise<DeviceState>;
+  // deviceType é necessário porque um único provider (ex: SmartThings) pode servir tanto
+  // TV quanto AC, e cada um monta um shape de estado diferente (TVState vs ACState).
+  fetchState(externalId: string, deviceType: DeviceType): Promise<DeviceState>;
 
   sendCommand(externalId: string, command: DeviceCommand): Promise<void>;
 

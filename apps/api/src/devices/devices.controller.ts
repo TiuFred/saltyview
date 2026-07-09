@@ -1,11 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import type { CreateDeviceDto, DeviceCommand, UpdateDeviceNameDto } from '@casa/shared-types';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { RequestUser } from '../auth/decorators/current-user.decorator';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { LogsService } from '../logs/logs.service';
 import { DevicesService } from './devices.service';
+import { AssignDeviceTagsDto } from './dto/assign-device-tags.dto';
 import { SendCommandDto } from './dto/send-command.dto';
+import { UpdateDeviceIconDto } from './dto/update-device-icon.dto';
 
 @Controller('devices')
 @UseGuards(JwtAuthGuard)
@@ -41,17 +44,27 @@ export class DevicesController {
   }
 
   @Patch(':id/name')
-  updateName(
-    @Param('id') id: string,
-    @Body() dto: UpdateDeviceNameDto,
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.devicesService.updateName(id, dto, user.email);
+  @UseGuards(AdminGuard)
+  updateName(@Param('id') id: string, @Body() dto: UpdateDeviceNameDto) {
+    return this.devicesService.updateName(id, dto);
+  }
+
+  @Patch(':id/icon')
+  @UseGuards(AdminGuard)
+  updateIcon(@Param('id') id: string, @Body() dto: UpdateDeviceIconDto) {
+    return this.devicesService.updateIcon(id, dto);
+  }
+
+  @Put(':id/tags')
+  @UseGuards(AdminGuard)
+  setTags(@Param('id') id: string, @Body() dto: AssignDeviceTagsDto) {
+    return this.devicesService.setTags(id, dto);
   }
 
   @Delete(':id')
-  removeDevice(@Param('id') id: string, @CurrentUser() user: RequestUser) {
-    return this.devicesService.removeDevice(id, user.email);
+  @UseGuards(AdminGuard)
+  removeDevice(@Param('id') id: string) {
+    return this.devicesService.removeDevice(id);
   }
 
   @Get(':id/logs')

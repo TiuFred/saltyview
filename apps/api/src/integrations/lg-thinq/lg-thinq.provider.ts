@@ -44,6 +44,7 @@ export class LgThinqProvider implements DeviceProvider {
     );
   }
 
+  // deviceType não é usado: a integração LG ThinQ só serve AC hoje.
   async fetchState(externalId: string): Promise<ACState> {
     const response = await this.api.asyncGetDeviceStatus(externalId);
     const body = (response.body ?? {}) as ThinqStatusBody;
@@ -64,6 +65,9 @@ export class LgThinqProvider implements DeviceProvider {
       mode,
       fanSpeed,
       swing: body.windDirection?.rotateUpDown ?? null,
+      specialMode: null,
+      energyCtrl: null,
+      lightOff: null,
     };
   }
 

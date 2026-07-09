@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { DevicesModule } from './devices/devices.module';
 import { LogsModule } from './logs/logs.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { TagsModule } from './tags/tags.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RealtimeModule } from './realtime/realtime.module';
     DevicesModule,
     LogsModule,
     RealtimeModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

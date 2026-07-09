@@ -47,6 +47,7 @@ model Device {
   provider   DeviceProviderType
   externalId String?
   roomId     String?
+  icon       String?
   lastState  Json?
   online     Boolean            @default(false)
   createdAt  DateTime           @default(now())
@@ -54,8 +55,19 @@ model Device {
 
   room Room?       @relation(fields: [roomId], references: [id])
   logs DeviceLog[]
+  tags Tag[]
 
   @@map("devices")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  devices Device[]
+
+  @@map("tags")
 }
 
 model DeviceLog {

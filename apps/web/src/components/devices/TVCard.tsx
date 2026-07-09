@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import type { DeviceDto, TVCommand, TVState } from '@casa/shared-types';
+import type { DeviceDto, TVCommand, TVState, TagDto } from '@casa/shared-types';
 import { DeviceCard } from './DeviceCard';
+import { DeviceTagSelector } from '../tags/DeviceTagSelector';
 
 const APPS: { key: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus'; label: string }[] = [
   { key: 'netflix', label: 'Netflix' },
@@ -18,9 +19,12 @@ interface TVCardProps {
   onCommand: (command: TVCommand) => Promise<void>;
   onRename?: (newName: string) => void;
   onRemove?: () => void;
+  onChangeIcon?: (icon: string) => void;
+  allTags?: TagDto[];
+  onChangeTags?: (tagIds: string[]) => Promise<void>;
 }
 
-export function TVCard({ device, onCommand, onRename, onRemove }: TVCardProps) {
+export function TVCard({ device, onCommand, onRename, onRemove, onChangeIcon, allTags, onChangeTags }: TVCardProps) {
   const [busy, setBusy] = useState(false);
   const state = (device.state as TVState | null) ?? {
     power: 'off',
@@ -41,7 +45,7 @@ export function TVCard({ device, onCommand, onRename, onRemove }: TVCardProps) {
 
   return (
     <DeviceCard
-      icon="📺"
+      icon={device.icon ?? '📺'}
       name={device.name}
       online={device.online}
       powerOn={state.power === 'on'}
@@ -49,6 +53,10 @@ export function TVCard({ device, onCommand, onRename, onRemove }: TVCardProps) {
       onTogglePower={() => run({ type: 'power', value: state.power === 'on' ? 'off' : 'on' })}
       onRename={onRename}
       onRemove={onRemove}
+      onChangeIcon={onChangeIcon}
+      adminExtra={
+        onChangeTags && allTags ? <DeviceTagSelector device={device} allTags={allTags} onChange={onChangeTags} /> : undefined
+      }
     >
       <div className="flex items-center gap-3">
         <span className="w-16 text-xs text-muted">Volume</span>

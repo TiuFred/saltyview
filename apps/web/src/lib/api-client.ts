@@ -1,12 +1,17 @@
 import type {
+  AssignDeviceTagsDto,
   AuthTokensDto,
   AuthenticatedUserDto,
   CreateDeviceDto,
+  CreateTagDto,
   DeviceCommand,
   DeviceDto,
   DeviceLogDto,
   ProviderDeviceDto,
+  TagDto,
+  UpdateDeviceIconDto,
   UpdateDeviceNameDto,
+  UpdateTagDto,
   UserSummaryDto,
 } from '@casa/shared-types';
 
@@ -70,7 +75,25 @@ export const apiClient = {
   updateDeviceName: (token: string, deviceId: string, payload: UpdateDeviceNameDto) =>
     request<DeviceDto>(`/devices/${deviceId}/name`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
 
+  updateDeviceIcon: (token: string, deviceId: string, payload: UpdateDeviceIconDto) =>
+    request<DeviceDto>(`/devices/${deviceId}/icon`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
+
+  setDeviceTags: (token: string, deviceId: string, payload: AssignDeviceTagsDto) =>
+    request<DeviceDto>(`/devices/${deviceId}/tags`, { method: 'PUT', body: JSON.stringify(payload) }, token),
+
   removeDevice: (token: string, deviceId: string) => request<void>(`/devices/${deviceId}`, { method: 'DELETE' }, token),
+
+  listTags: (token: string) => request<TagDto[]>('/tags', {}, token),
+
+  createTag: (token: string, payload: CreateTagDto) =>
+    request<TagDto>('/tags', { method: 'POST', body: JSON.stringify(payload) }, token),
+
+  updateTag: (token: string, tagId: string, payload: UpdateTagDto) =>
+    request<TagDto>(`/tags/${tagId}`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
+
+  getTagUsage: (token: string, tagId: string) => request<{ deviceCount: number }>(`/tags/${tagId}/usage`, {}, token),
+
+  deleteTag: (token: string, tagId: string) => request<void>(`/tags/${tagId}`, { method: 'DELETE' }, token),
 
   getDevice: (token: string, deviceId: string) => request<DeviceDto>(`/devices/${deviceId}`, {}, token),
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { CreateDeviceDto, ProviderDeviceDto } from '@casa/shared-types';
+import type { CreateDeviceDto, DeviceType, ProviderDeviceDto, TagDto } from '@casa/shared-types';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ACCommand, DeviceCommand, DeviceDto, TVCommand } from '@casa/shared-types';
@@ -10,6 +10,8 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { useRealtimeDevices } from '@/lib/use-realtime-devices';
 import { TVCard } from '@/components/devices/TVCard';
 import { ACCard } from '@/components/devices/ACCard';
+import { TagFilterBar } from '@/components/tags/TagFilterBar';
+import { TagManagerModal } from '@/components/tags/TagManagerModal';
 
 export default function DashboardPage() {
   const { user, accessToken, loading, logout } = useAuth();
@@ -20,9 +22,13 @@ export default function DashboardPage() {
   const [availableSmartThingsDevices, setAvailableSmartThingsDevices] = useState<ProviderDeviceDto[]>([]);
   const [selectedLgDeviceId, setSelectedLgDeviceId] = useState('');
   const [selectedSmartThingsDeviceId, setSelectedSmartThingsDeviceId] = useState('');
+  const [smartThingsDeviceType, setSmartThingsDeviceType] = useState<DeviceType>('TV');
   const [deviceName, setDeviceName] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tags, setTags] = useState<TagDto[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,6 +50,20 @@ export default function DashboardPage() {
   useEffect(() => {
     loadDevices();
   }, [loadDevices]);
+
+  const loadTags = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const list = await apiClient.listTags(accessToken);
+      setTags(list);
+    } catch {
+      setErrorMessage('Não foi possível carregar as tags.');
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
 
   const loadAvailableLgDevices = useCallback(async () => {
     if (!accessToken || !isAdmin) return;
@@ -124,7 +144,7 @@ export default function DashboardPage() {
 
     const payload: CreateDeviceDto = {
       name: deviceName.trim() || selectedDevice.name,
-      type: 'TV',
+      type: smartThingsDeviceType,
       provider: 'SMARTTHINGS',
       externalId: selectedDevice.id,
     };
@@ -151,6 +171,28 @@ export default function DashboardPage() {
     }
   }
 
+  async function changeDeviceIcon(deviceId: string, icon: string) {
+    if (!accessToken || !isAdmin) return;
+    try {
+      const updated = await apiClient.updateDeviceIcon(accessToken, deviceId, { icon });
+      setDevices((prev) => prev.map((device) => (device.id === deviceId ? updated : device)));
+      setErrorMessage(null);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível trocar o ícone.');
+    }
+  }
+
+  async function changeDeviceTags(deviceId: string, tagIds: string[]) {
+    if (!accessToken || !isAdmin) return;
+    try {
+      const updated = await apiClient.setDeviceTags(accessToken, deviceId, { tagIds });
+      setDevices((prev) => prev.map((device) => (device.id === deviceId ? updated : device)));
+      setErrorMessage(null);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível atualizar as tags do aparelho.');
+    }
+  }
+
   async function removeDeviceFromList(deviceId: string) {
     if (!accessToken || !isAdmin) return;
     try {
@@ -161,6 +203,40 @@ export default function DashboardPage() {
       setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível remover o aparelho.');
     }
   }
+
+  async function createTag(name: string) {
+    if (!accessToken) return;
+    const created = await apiClient.createTag(accessToken, { name });
+    setTags((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+  }
+
+  async function renameTag(tagId: string, name: string) {
+    if (!accessToken) return;
+    const updated = await apiClient.updateTag(accessToken, tagId, { name });
+    setTags((prev) => prev.map((tag) => (tag.id === tagId ? updated : tag)));
+    await loadDevices();
+  }
+
+  async function deleteTag(tagId: string) {
+    if (!accessToken) return;
+    await apiClient.deleteTag(accessToken, tagId);
+    setTags((prev) => prev.filter((tag) => tag.id !== tagId));
+    setSelectedTagIds((prev) => prev.filter((id) => id !== tagId));
+    await loadDevices();
+  }
+
+  async function getTagUsage(tagId: string) {
+    if (!accessToken) return { deviceCount: 0 };
+    return apiClient.getTagUsage(accessToken, tagId);
+  }
+
+  function toggleTagFilter(tagId: string) {
+    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
+  }
+
+  const visibleDevices = devices.filter(
+    (device) => selectedTagIds.length === 0 || device.tags.some((tag) => selectedTagIds.includes(tag.id)),
+  );
 
   const onlineCount = devices.filter((d) => d.online).length;
   const poweredOnCount = devices.filter((d) => (d.state as { power?: string } | null)?.power === 'on').length;
@@ -195,6 +271,19 @@ export default function DashboardPage() {
         <Stat label="Ligados" value={poweredOnCount} />
         <Stat label="Offline" value={devices.length - onlineCount} />
       </motion.section>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <TagFilterBar tags={tags} selectedTagIds={selectedTagIds} onToggle={toggleTagFilter} onClear={() => setSelectedTagIds([])} />
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setTagManagerOpen(true)}
+            className="rounded-xl border border-surface-border px-3 py-1.5 text-xs text-muted transition hover:text-foreground"
+          >
+            Gerenciar tags
+          </button>
+        )}
+      </div>
 
       {isAdmin && (
         <section className="glass-card rounded-3xl p-6 space-y-6">
@@ -243,8 +332,20 @@ export default function DashboardPage() {
 
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             <div className="flex-1">
-              <h2 className="text-lg font-semibold">Adicionar TV Samsung</h2>
-              <p className="text-sm text-muted">Descubra TVs da sua conta SmartThings e adicione ao banco.</p>
+              <h2 className="text-lg font-semibold">Adicionar aparelho Samsung</h2>
+              <p className="text-sm text-muted">Descubra aparelhos da sua conta SmartThings e adicione ao banco.</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-muted" htmlFor="smartthings-device-type">Tipo</label>
+              <select
+                id="smartthings-device-type"
+                value={smartThingsDeviceType}
+                onChange={(event) => setSmartThingsDeviceType(event.target.value as DeviceType)}
+                className="rounded-xl border border-surface-border bg-transparent px-3 py-2 text-sm"
+              >
+                <option value="TV">TV</option>
+                <option value="AC">Ar Condicionado</option>
+              </select>
             </div>
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm text-muted" htmlFor="smartthings-device-select">Aparelho SmartThings</label>
@@ -289,7 +390,7 @@ export default function DashboardPage() {
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {devicesLoading && <p className="text-sm text-muted">Carregando dispositivos…</p>}
 
-        {devices.map((device) =>
+        {visibleDevices.map((device) =>
           device.type === 'TV' ? (
             <TVCard
               key={device.id}
@@ -297,6 +398,9 @@ export default function DashboardPage() {
               onCommand={(command: TVCommand) => sendCommand(device.id, command)}
               onRename={isAdmin ? (name: string) => renameDevice(device.id, name) : undefined}
               onRemove={isAdmin ? () => removeDeviceFromList(device.id) : undefined}
+              onChangeIcon={isAdmin ? (icon: string) => changeDeviceIcon(device.id, icon) : undefined}
+              allTags={tags}
+              onChangeTags={isAdmin ? (tagIds: string[]) => changeDeviceTags(device.id, tagIds) : undefined}
             />
           ) : (
             <ACCard
@@ -305,10 +409,25 @@ export default function DashboardPage() {
               onCommand={(command: ACCommand) => sendCommand(device.id, command)}
               onRename={isAdmin ? (name: string) => renameDevice(device.id, name) : undefined}
               onRemove={isAdmin ? () => removeDeviceFromList(device.id) : undefined}
+              onChangeIcon={isAdmin ? (icon: string) => changeDeviceIcon(device.id, icon) : undefined}
+              allTags={tags}
+              onChangeTags={isAdmin ? (tagIds: string[]) => changeDeviceTags(device.id, tagIds) : undefined}
             />
           ),
         )}
       </section>
+
+      {isAdmin && (
+        <TagManagerModal
+          open={tagManagerOpen}
+          onClose={() => setTagManagerOpen(false)}
+          tags={tags}
+          onCreate={createTag}
+          onRename={renameTag}
+          onDelete={deleteTag}
+          getUsage={getTagUsage}
+        />
+      )}
 
       <AnimatePresence>
         {errorMessage && (

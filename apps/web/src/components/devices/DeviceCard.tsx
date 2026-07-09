@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, type ReactNode } from 'react';
+import { EmojiPicker } from './EmojiPicker';
 
 interface DeviceCardProps {
   icon: ReactNode;
@@ -13,10 +14,12 @@ interface DeviceCardProps {
   nameHref?: string;
   onRename?: (newName: string) => void;
   onRemove?: () => void;
+  onChangeIcon?: (icon: string) => void;
+  adminExtra?: ReactNode;
   children?: ReactNode;
 }
 
-export function DeviceCard({ icon, name, online, powerOn, busy, onTogglePower, nameHref, onRename, onRemove, children }: DeviceCardProps) {
+export function DeviceCard({ icon, name, online, powerOn, busy, onTogglePower, nameHref, onRename, onRemove, onChangeIcon, adminExtra, children }: DeviceCardProps) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(name);
   return (
@@ -29,13 +32,17 @@ export function DeviceCard({ icon, name, online, powerOn, busy, onTogglePower, n
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div
-            className={`flex h-11 w-11 items-center justify-center rounded-2xl text-xl transition-colors ${
-              powerOn ? 'bg-accent-soft text-accent' : 'bg-black/[0.04] text-muted dark:bg-white/[0.06]'
-            }`}
-          >
-            {icon}
-          </div>
+          {onChangeIcon ? (
+            <EmojiPicker value={typeof icon === 'string' ? icon : null} onChange={onChangeIcon} />
+          ) : (
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-2xl text-xl transition-colors ${
+                powerOn ? 'bg-accent-soft text-accent' : 'bg-black/[0.04] text-muted dark:bg-white/[0.06]'
+              }`}
+            >
+              {icon}
+            </div>
+          )}
           <div>
             {editing ? (
               <input
@@ -123,6 +130,8 @@ export function DeviceCard({ icon, name, online, powerOn, busy, onTogglePower, n
           </button>
         </div>
       </div>
+
+      {adminExtra}
 
       {powerOn && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex flex-col gap-4">

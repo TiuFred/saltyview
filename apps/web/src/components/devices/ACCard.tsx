@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import type { ACCommand, ACFanSpeed, ACMode, ACState, DeviceDto } from '@casa/shared-types';
+import type { ACCommand, ACFanSpeed, ACMode, ACState, DeviceDto, TagDto } from '@casa/shared-types';
 import { DeviceCard } from './DeviceCard';
+import { DeviceTagSelector } from '../tags/DeviceTagSelector';
 
 const MODES: { key: ACMode; label: string }[] = [
   { key: 'cool', label: 'Frio' },
@@ -24,9 +25,12 @@ interface ACCardProps {
   onCommand: (command: ACCommand) => Promise<void>;
   onRename?: (newName: string) => void;
   onRemove?: () => void;
+  onChangeIcon?: (icon: string) => void;
+  allTags?: TagDto[];
+  onChangeTags?: (tagIds: string[]) => Promise<void>;
 }
 
-export function ACCard({ device, onCommand, onRename, onRemove }: ACCardProps) {
+export function ACCard({ device, onCommand, onRename, onRemove, onChangeIcon, allTags, onChangeTags }: ACCardProps) {
   const [busy, setBusy] = useState(false);
   const state = (device.state as ACState | null) ?? {
     power: 'off',
@@ -50,7 +54,7 @@ export function ACCard({ device, onCommand, onRename, onRemove }: ACCardProps) {
 
   return (
     <DeviceCard
-      icon="❄️"
+      icon={device.icon ?? '❄️'}
       name={device.name}
       online={device.online}
       powerOn={state.power === 'on'}
@@ -59,6 +63,10 @@ export function ACCard({ device, onCommand, onRename, onRemove }: ACCardProps) {
       nameHref={`/remote/${device.id}`}
       onRename={onRename}
       onRemove={onRemove}
+      onChangeIcon={onChangeIcon}
+      adminExtra={
+        onChangeTags && allTags ? <DeviceTagSelector device={device} allTags={allTags} onChange={onChangeTags} /> : undefined
+      }
     >
       <div className="flex items-center justify-center gap-4">
         <button

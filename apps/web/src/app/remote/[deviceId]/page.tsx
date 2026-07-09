@@ -6,7 +6,8 @@ import type { ACCommand, DeviceDto } from '@casa/shared-types';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useRealtimeDevices } from '@/lib/use-realtime-devices';
-import { ACRemoteControl } from '@/components/devices/ACRemoteControl';
+import { LgAcRemoteControl } from '@/components/devices/ac-remotes/LgAcRemoteControl';
+import { SamsungAcRemoteControl } from '@/components/devices/ac-remotes/SamsungAcRemoteControl';
 
 export default function RemoteControlPage({ params }: { params: Promise<{ deviceId: string }> }) {
   const { deviceId } = use(params);
@@ -60,7 +61,13 @@ export default function RemoteControlPage({ params }: { params: Promise<{ device
 
       {!device && !error && <p className="text-sm text-muted">Carregando controle remoto…</p>}
 
-      {device && device.type === 'AC' && <ACRemoteControl device={device} onCommand={sendCommand} />}
+      {device && device.type === 'AC' && device.provider === 'LG_THINQ' && (
+        <LgAcRemoteControl device={device} onCommand={sendCommand} />
+      )}
+
+      {device && device.type === 'AC' && device.provider === 'SMARTTHINGS' && (
+        <SamsungAcRemoteControl device={device} onCommand={sendCommand} />
+      )}
 
       {device && device.type !== 'AC' && <p className="text-sm text-muted">Ainda não há um controle remoto para este tipo de dispositivo.</p>}
     </div>

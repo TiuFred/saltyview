@@ -18,12 +18,14 @@ const FAN_LABELS: Record<ACFanSpeed, string> = {
   auto: 'Auto',
 };
 
-interface ACRemoteControlProps {
+const FAN_SPEEDS: ACFanSpeed[] = ['low', 'medium', 'high', 'auto'];
+
+interface LgAcRemoteControlProps {
   device: DeviceDto;
   onCommand: (command: ACCommand) => Promise<void>;
 }
 
-export function ACRemoteControl({ device, onCommand }: ACRemoteControlProps) {
+export function LgAcRemoteControl({ device, onCommand }: LgAcRemoteControlProps) {
   const [busy, setBusy] = useState(false);
   const state = (device.state as ACState | null) ?? {
     power: 'off',
@@ -32,6 +34,9 @@ export function ACRemoteControl({ device, onCommand }: ACRemoteControlProps) {
     mode: 'auto',
     fanSpeed: 'auto',
     swing: false,
+    specialMode: null,
+    energyCtrl: null,
+    lightOff: null,
   };
 
   async function run(command: ACCommand) {
@@ -47,6 +52,12 @@ export function ACRemoteControl({ device, onCommand }: ACRemoteControlProps) {
   const isOn = state.power === 'on';
   const mode = state.mode ?? 'auto';
   const fanSpeed = state.fanSpeed ?? 'auto';
+
+  function shiftFanSpeed(step: 1 | -1) {
+    const currentIndex = FAN_SPEEDS.indexOf(fanSpeed);
+    const nextIndex = (currentIndex + step + FAN_SPEEDS.length) % FAN_SPEEDS.length;
+    run({ type: 'fanSpeed', value: FAN_SPEEDS[nextIndex] });
+  }
 
   return (
     <div className="mx-auto w-full max-w-[320px] rounded-[3rem] bg-gradient-to-b from-gray-100 to-gray-300 p-6 shadow-2xl">
@@ -126,12 +137,7 @@ export function ACRemoteControl({ device, onCommand }: ACRemoteControlProps) {
       <div className="mb-6 flex items-center justify-center gap-8">
         <button
           type="button"
-          onClick={() => {
-            const speeds: ACFanSpeed[] = ['low', 'medium', 'high', 'auto'];
-            const currentIndex = speeds.indexOf(fanSpeed);
-            const next = speeds[(currentIndex + 1) % speeds.length];
-            run({ type: 'fanSpeed', value: next });
-          }}
+          onClick={() => shiftFanSpeed(1)}
           disabled={busy || !isOn}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-b from-white to-gray-200 text-lg shadow transition active:scale-95 disabled:opacity-50"
         >
@@ -142,8 +148,9 @@ export function ACRemoteControl({ device, onCommand }: ACRemoteControlProps) {
         </div>
         <button
           type="button"
-          disabled={true}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-b from-white to-gray-200 text-lg shadow opacity-50"
+          onClick={() => shiftFanSpeed(-1)}
+          disabled={busy || !isOn}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-b from-white to-gray-200 text-lg shadow transition active:scale-95 disabled:opacity-50"
         >
           ▼
         </button>

@@ -11,6 +11,9 @@ const COMMAND_TYPES: DeviceCommand['type'][] = [
   'mode',
   'fanSpeed',
   'swing',
+  'specialMode',
+  'energyCtrl',
+  'lightOff',
 ];
 
 export class SendCommandDto {

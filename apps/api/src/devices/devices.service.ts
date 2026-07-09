@@ -1,14 +1,20 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@prisma/client';
-import type { CreateDeviceDto, DeviceCommand, DeviceDto, ProviderDeviceDto, UpdateDeviceNameDto } from '@casa/shared-types';
+import type {
+  AssignDeviceTagsDto,
+  CreateDeviceDto,
+  DeviceCommand,
+  DeviceDto,
+  ProviderDeviceDto,
+  UpdateDeviceIconDto,
+  UpdateDeviceNameDto,
+} from '@casa/shared-types';
 import { ProviderCommandError } from '@casa/device-contracts';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -16,6 +22,8 @@ import { LogsService } from '../logs/logs.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { DeviceProviderRegistry } from './device-provider.registry';
 import { toDeviceDto } from './devices.mapper';
+
+const WITH_TAGS = { include: { tags: true } } satisfies Prisma.DeviceDefaultArgs;
 
 @Injectable()
 export class DevicesService {
@@ -25,12 +33,12 @@ export class DevicesService {
     private readonly logs: LogsService,
     private readonly realtime: RealtimeGateway,
     private readonly providers: DeviceProviderRegistry,
-    private readonly config: ConfigService,
   ) {}
 
   async list(): Promise<DeviceDto[]> {
     const devices = await this.prisma.device.findMany({
       orderBy: { createdAt: 'asc' },
+      ...WITH_TAGS,
     });
     return devices.map(toDeviceDto);
   }
@@ -79,24 +87,46 @@ export class DevicesService {
         externalId: input.externalId ?? null,
         online: false,
       },
+      ...WITH_TAGS,
     });
 
     return toDeviceDto(created);
   }
 
-  async updateName(id: string, input: UpdateDeviceNameDto, email: string): Promise<DeviceDto> {
-    this.ensureAdmin(email, 'renomear dispositivos');
-
+  async updateName(id: string, input: UpdateDeviceNameDto): Promise<DeviceDto> {
+    await this.getDeviceOrThrow(id);
     const updated = await this.prisma.device.update({
       where: { id },
       data: { name: input.name },
+      ...WITH_TAGS,
     });
 
     return toDeviceDto(updated);
   }
 
-  async removeDevice(id: string, email: string): Promise<void> {
-    this.ensureAdmin(email, 'remover dispositivos');
+  async updateIcon(id: string, input: UpdateDeviceIconDto): Promise<DeviceDto> {
+    await this.getDeviceOrThrow(id);
+    const updated = await this.prisma.device.update({
+      where: { id },
+      data: { icon: input.icon },
+      ...WITH_TAGS,
+    });
+
+    return toDeviceDto(updated);
+  }
+
+  async setTags(id: string, input: AssignDeviceTagsDto): Promise<DeviceDto> {
+    await this.getDeviceOrThrow(id);
+    const updated = await this.prisma.device.update({
+      where: { id },
+      data: { tags: { set: input.tagIds.map((tagId) => ({ id: tagId })) } },
+      ...WITH_TAGS,
+    });
+
+    return toDeviceDto(updated);
+  }
+
+  async removeDevice(id: string): Promise<void> {
     await this.getDeviceOrThrow(id);
     await this.prisma.device.delete({ where: { id } });
   }
@@ -119,13 +149,14 @@ export class DevicesService {
     try {
       await provider.sendCommand(device.externalId, command);
       const [state, online] = await Promise.all([
-        provider.fetchState(device.externalId),
+        provider.fetchState(device.externalId, device.type),
         provider.isOnline(device.externalId),
       ]);
 
       const updated = await this.prisma.device.update({
         where: { id },
         data: { lastState: state as unknown as Prisma.InputJsonValue, online },
+        ...WITH_TAGS,
       });
 
       await this.redis.setJson(`device:${id}:state`, state);
@@ -164,13 +195,14 @@ export class DevicesService {
 
     try {
       const [state, online] = await Promise.all([
-        provider.fetchState(device.externalId),
+        provider.fetchState(device.externalId, device.type),
         provider.isOnline(device.externalId),
       ]);
 
       const updated = await this.prisma.device.update({
         where: { id },
         data: { lastState: state as unknown as Prisma.InputJsonValue, online },
+        ...WITH_TAGS,
       });
 
       await this.redis.setJson(`device:${id}:state`, state);
@@ -191,15 +223,8 @@ export class DevicesService {
     }
   }
 
-  private ensureAdmin(email: string, action: string) {
-    const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
-    if (email !== adminEmail) {
-      throw new ForbiddenException(`Apenas o administrador pode ${action}.`);
-    }
-  }
-
   private async getDeviceOrThrow(id: string) {
-    const device = await this.prisma.device.findUnique({ where: { id } });
+    const device = await this.prisma.device.findUnique({ where: { id }, ...WITH_TAGS });
     if (!device) {
       throw new NotFoundException('Dispositivo não encontrado');
     }
