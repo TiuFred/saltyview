@@ -25,7 +25,8 @@ model User {
   pinHash      String?
   createdAt    DateTime @default(now())
 
-  deviceLogs DeviceLog[]
+  deviceLogs      DeviceLog[]
+  turnedOnDevices Device[]    @relation("DeviceTurnedOnBy")
 
   @@map("users")
 }
@@ -52,6 +53,9 @@ model Device {
   online     Boolean            @default(false)
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
+
+  turnedOnByUserId String?
+  turnedOnByUser   User?   @relation("DeviceTurnedOnBy", fields: [turnedOnByUserId], references: [id], onDelete: SetNull)
 
   room Room?       @relation(fields: [roomId], references: [id])
   logs DeviceLog[]

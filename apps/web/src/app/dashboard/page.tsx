@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tags, setTags] = useState<TagDto[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
 
   useEffect(() => {
@@ -221,7 +221,7 @@ export default function DashboardPage() {
     if (!accessToken) return;
     await apiClient.deleteTag(accessToken, tagId);
     setTags((prev) => prev.filter((tag) => tag.id !== tagId));
-    setSelectedTagIds((prev) => prev.filter((id) => id !== tagId));
+    setSelectedTagId((prev) => (prev === tagId ? null : prev));
     await loadDevices();
   }
 
@@ -231,11 +231,11 @@ export default function DashboardPage() {
   }
 
   function toggleTagFilter(tagId: string) {
-    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
+    setSelectedTagId((prev) => (prev === tagId ? null : tagId));
   }
 
   const visibleDevices = devices.filter(
-    (device) => selectedTagIds.length === 0 || device.tags.some((tag) => selectedTagIds.includes(tag.id)),
+    (device) => selectedTagId === null || device.tags.some((tag) => tag.id === selectedTagId),
   );
 
   const onlineCount = devices.filter((d) => d.online).length;
@@ -273,7 +273,7 @@ export default function DashboardPage() {
       </motion.section>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <TagFilterBar tags={tags} selectedTagIds={selectedTagIds} onToggle={toggleTagFilter} onClear={() => setSelectedTagIds([])} />
+        <TagFilterBar tags={tags} selectedTagId={selectedTagId} onToggle={toggleTagFilter} onClear={() => setSelectedTagId(null)} />
         {isAdmin && (
           <button
             type="button"

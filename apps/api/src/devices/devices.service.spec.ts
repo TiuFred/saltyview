@@ -21,6 +21,8 @@ describe('DevicesService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     tags: [],
+    turnedOnByUserId: null,
+    turnedOnByUser: null,
   };
 
   const unlinkedDevice = { ...linkedDevice, id: 'device-ac', externalId: null };
@@ -126,7 +128,7 @@ describe('DevicesService', () => {
           externalId: 'lg-1',
           online: false,
         },
-        include: { tags: true },
+        include: { tags: true, turnedOnByUser: true },
       });
       expect(result.externalId).toBe('lg-1');
     });
@@ -145,7 +147,7 @@ describe('DevicesService', () => {
       expect(prisma.device.update).toHaveBeenCalledWith({
         where: { id: 'device-tv' },
         data: { name: 'TV Nova' },
-        include: { tags: true },
+        include: { tags: true, turnedOnByUser: true },
       });
       expect(result.name).toBe('TV Nova');
     });

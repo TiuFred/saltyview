@@ -19,34 +19,6 @@ async function main() {
   });
   console.log(`Usuário admin pronto: ${admin.email}`);
 
-  await prisma.device.upsert({
-    where: { id: 'seed-tv-samsung' },
-    update: {},
-    create: {
-      id: 'seed-tv-samsung',
-      name: 'TV Samsung QN75QEF1AGXZD',
-      type: 'TV',
-      provider: 'SMARTTHINGS',
-      externalId: null,
-      online: false,
-    },
-  });
-
-  await prisma.device.upsert({
-    where: { id: 'seed-ac-lg' },
-    update: {},
-    create: {
-      id: 'seed-ac-lg',
-      name: 'Ar-condicionado LG',
-      type: 'AC',
-      provider: 'LG_THINQ',
-      externalId: null,
-      online: false,
-    },
-  });
-
-  console.log('Dispositivos da Fase 1 (TV Samsung, AC LG) prontos — vincule o externalId depois de cadastrar cada aparelho no app do fabricante.');
-
   const tagNames = ['LG', 'Samsung', 'Ar Condicionado', 'Televisão', 'Sala', 'Quartos'];
   for (const name of tagNames) {
     await prisma.tag.upsert({ where: { name }, update: {}, create: { name } });

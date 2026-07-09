@@ -4,18 +4,18 @@ import type { TagDto } from '@casa/shared-types';
 
 interface TagFilterBarProps {
   tags: TagDto[];
-  selectedTagIds: string[];
+  selectedTagId: string | null;
   onToggle: (tagId: string) => void;
   onClear: () => void;
 }
 
-export function TagFilterBar({ tags, selectedTagIds, onToggle, onClear }: TagFilterBarProps) {
+export function TagFilterBar({ tags, selectedTagId, onToggle, onClear }: TagFilterBarProps) {
   if (tags.length === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {tags.map((tag) => {
-        const active = selectedTagIds.includes(tag.id);
+        const active = selectedTagId === tag.id;
         return (
           <button
             key={tag.id}
@@ -29,7 +29,7 @@ export function TagFilterBar({ tags, selectedTagIds, onToggle, onClear }: TagFil
           </button>
         );
       })}
-      {selectedTagIds.length > 0 && (
+      {selectedTagId && (
         <button
           type="button"
           onClick={onClear}

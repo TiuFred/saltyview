@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import type { DeviceDto } from '@casa/shared-types';
 
-type DeviceWithTags = Prisma.DeviceGetPayload<{ include: { tags: true } }>;
+type DeviceWithTags = Prisma.DeviceGetPayload<{ include: { tags: true; turnedOnByUser: true } }>;
 
 export function toDeviceDto(device: DeviceWithTags): DeviceDto {
   return {
@@ -19,6 +19,7 @@ export function toDeviceDto(device: DeviceWithTags): DeviceDto {
       name: tag.name,
       createdAt: tag.createdAt.toISOString(),
     })),
+    turnedOnBy: device.turnedOnByUser?.name ?? null,
     updatedAt: device.updatedAt.toISOString(),
   };
 }

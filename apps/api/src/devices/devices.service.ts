@@ -23,7 +23,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { DeviceProviderRegistry } from './device-provider.registry';
 import { toDeviceDto } from './devices.mapper';
 
-const WITH_TAGS = { include: { tags: true } } satisfies Prisma.DeviceDefaultArgs;
+const WITH_TAGS = { include: { tags: true, turnedOnByUser: true } } satisfies Prisma.DeviceDefaultArgs;
 
 @Injectable()
 export class DevicesService {
@@ -155,7 +155,13 @@ export class DevicesService {
 
       const updated = await this.prisma.device.update({
         where: { id },
-        data: { lastState: state as unknown as Prisma.InputJsonValue, online },
+        data: {
+          lastState: state as unknown as Prisma.InputJsonValue,
+          online,
+          ...(command.type === 'power'
+            ? { turnedOnByUserId: command.value === 'on' ? userId : null }
+            : {}),
+        },
         ...WITH_TAGS,
       });
 

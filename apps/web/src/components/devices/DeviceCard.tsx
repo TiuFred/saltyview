@@ -9,6 +9,7 @@ interface DeviceCardProps {
   name: string;
   online: boolean;
   powerOn: boolean;
+  turnedOnBy?: string | null;
   busy?: boolean;
   onTogglePower: () => void;
   nameHref?: string;
@@ -19,7 +20,7 @@ interface DeviceCardProps {
   children?: ReactNode;
 }
 
-export function DeviceCard({ icon, name, online, powerOn, busy, onTogglePower, nameHref, onRename, onRemove, onChangeIcon, adminExtra, children }: DeviceCardProps) {
+export function DeviceCard({ icon, name, online, powerOn, turnedOnBy, busy, onTogglePower, nameHref, onRename, onRemove, onChangeIcon, adminExtra, children }: DeviceCardProps) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(name);
   return (
@@ -85,6 +86,7 @@ export function DeviceCard({ icon, name, online, powerOn, busy, onTogglePower, n
             <div className="flex items-center gap-1.5 text-xs text-muted">
               <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-online' : 'bg-muted'}`} />
               {online ? 'Online' : 'Offline'}
+              {powerOn && turnedOnBy && <span>· ligado por {turnedOnBy}</span>}
             </div>
           </div>
         </div>

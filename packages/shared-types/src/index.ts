@@ -46,6 +46,7 @@ export interface DeviceDto {
   state: DeviceState | null;
   icon: string | null;
   tags: TagDto[];
+  turnedOnBy: string | null;
   updatedAt: string;
 }
 

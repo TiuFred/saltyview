@@ -58,6 +58,7 @@ export function ACCard({ device, onCommand, onRename, onRemove, onChangeIcon, al
       name={device.name}
       online={device.online}
       powerOn={state.power === 'on'}
+      turnedOnBy={device.turnedOnBy}
       busy={busy}
       onTogglePower={() => run({ type: 'power', value: state.power === 'on' ? 'off' : 'on' })}
       nameHref={`/remote/${device.id}`}
