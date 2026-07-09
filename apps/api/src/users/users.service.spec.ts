@@ -7,15 +7,17 @@ describe('UsersService', () => {
   const prisma = {
     user: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
       create: jest.fn(),
     },
   };
+  const config = { get: jest.fn(() => 'admin@example.com') };
 
   let usersService: UsersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    usersService = new UsersService(prisma as unknown as PrismaService);
+    usersService = new UsersService(prisma as unknown as PrismaService, config as never);
   });
 
   it('creates a user with a generated email and hashed pin', async () => {
