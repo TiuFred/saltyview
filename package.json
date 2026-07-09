@@ -18,6 +18,7 @@
     "prisma:seed": "npm run prisma:seed --workspace=@casa/api"
   },
   "devDependencies": {
+    "next": "^16.2.10",
     "prettier": "^3.4.2"
   }
 }
