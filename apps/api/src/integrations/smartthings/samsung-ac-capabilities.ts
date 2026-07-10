@@ -1,12 +1,15 @@
 import type { ACFanSpeed, ACMode, ACSpecialMode } from '@casa/shared-types';
 
-// Capabilities padrão do ecossistema SmartThings para AC Samsung. Confirme contra o dispositivo
-// real (via getStatus) na primeira integração — assim como a LG, a Samsung pode variar valores
-// por linha de produto.
+// Capabilities confirmadas em 2026-07-09 contra um AC Samsung real (DA-AC-RAC-01011) via
+// client.devices.get()/getStatus() — airConditionerMode.supportedAcModes retornou
+// ['auto','cool','dry','fan','heat'], airConditionerFanMode.supportedAcFanModes retornou
+// ['auto','low','medium','high','turbo'], custom.airConditionerOptionalMode.supportedAcOptionalMode
+// retornou ['off','sleep','quiet','smart','speed','windFree','windFreeSleep']. Outras linhas Samsung
+// podem variar; reconfirme se surgir um novo erro "UnexpectedError" da API do SmartThings.
 export const SAMSUNG_AC_MODE: Record<ACMode, string> = {
   cool: 'cool',
   heat: 'heat',
-  fan: 'wind', // SmartThings usa "wind", não "fan", para o modo ventilar
+  fan: 'fan',
   dry: 'dry',
   auto: 'auto',
 };

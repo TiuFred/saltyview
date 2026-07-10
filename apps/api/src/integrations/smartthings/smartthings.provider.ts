@@ -27,9 +27,11 @@ import {
 
 const MAIN_COMPONENT = 'main';
 
-// Capabilities best-effort sem documentação pública estável — precisam de calibração contra
-// um AC Samsung real antes de confiar no comportamento (mesmo espírito do aviso em thinq-mappings.ts).
-const ENERGY_SAVING_CAPABILITY = 'custom.energySavingMode';
+// custom.energyType confirmado em 2026-07-09 contra um AC Samsung real (atributo booleano
+// energySavingOperation); o nome do comando setEnergySavingOperation segue o padrão observado
+// nas demais capabilities custom (attribute "x" -> command "setX") mas não foi validado
+// diretamente — mesmo espírito do aviso em thinq-mappings.ts.
+const ENERGY_SAVING_CAPABILITY = 'custom.energyType';
 const AC_LIGHTING_CAPABILITY = 'samsungce.airConditionerLighting';
 
 @Injectable()
@@ -127,14 +129,12 @@ export class SmartThingsProvider implements DeviceProvider {
       ? (SAMSUNG_OPTIONAL_MODE_REVERSE[main['custom.airConditionerOptionalMode'].acOptionalMode.value] ?? null)
       : null;
 
-    // Leitura best-effort — capabilities não confirmadas publicamente; se ausentes, cai em null
+    // Leitura best-effort — nome do comando de escrita não confirmado; se ausente, cai em null
     // sem quebrar o restante do estado.
     const energyCtrl =
-      main[ENERGY_SAVING_CAPABILITY]?.energySavingMode?.value === 'on'
-        ? true
-        : main[ENERGY_SAVING_CAPABILITY]?.energySavingMode?.value === 'off'
-          ? false
-          : null;
+      typeof main[ENERGY_SAVING_CAPABILITY]?.energySavingOperation?.value === 'boolean'
+        ? main[ENERGY_SAVING_CAPABILITY].energySavingOperation.value
+        : null;
     const lightOff =
       main[AC_LIGHTING_CAPABILITY]?.lighting?.value === 'off'
         ? true
@@ -234,13 +234,15 @@ export class SmartThingsProvider implements DeviceProvider {
         try {
           await this.client.devices.executeCommand(externalId, {
             capability: ENERGY_SAVING_CAPABILITY,
-            command: 'setEnergySavingMode',
-            arguments: [command.value ? 'on' : 'off'],
+            command: 'setEnergySavingOperation',
+            // O SDK tipa arguments como string | number | object, mas a API aceita booleano de
+            // verdade para esse comando — o cast é só pra satisfazer o TS.
+            arguments: [command.value as unknown as object],
           });
         } catch (error) {
           throw new ProviderCommandError(
             this.providerType,
-            `Falha ao definir Energy Ctrl — capability best-effort (${ENERGY_SAVING_CAPABILITY}) pode não existir neste modelo: ${(error as Error).message}`,
+            `Falha ao definir Energy Ctrl — nome do comando ainda não confirmado neste modelo: ${(error as Error).message}`,
           );
         }
         return;
