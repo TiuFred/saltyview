@@ -52,6 +52,7 @@ export function TVCard({ device, onCommand, onRename, onRemove, onChangeIcon, al
       turnedOnBy={device.turnedOnBy}
       busy={busy}
       onTogglePower={() => run({ type: 'power', value: state.power === 'on' ? 'off' : 'on' })}
+      nameHref={device.provider === 'SMARTTHINGS' ? `/remote/${device.id}` : undefined}
       onRename={onRename}
       onRemove={onRemove}
       onChangeIcon={onChangeIcon}

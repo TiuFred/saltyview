@@ -31,8 +31,8 @@ export function DeviceCard({ icon, name, online, powerOn, turnedOnBy, busy, onTo
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className="glass-card flex flex-col gap-5 rounded-3xl p-6 shadow-xl shadow-black/5"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {onChangeIcon ? (
             <EmojiPicker value={typeof icon === 'string' ? icon : null} onChange={onChangeIcon} />
           ) : (
@@ -91,7 +91,7 @@ export function DeviceCard({ icon, name, online, powerOn, turnedOnBy, busy, onTo
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {onRename && !editing && (
             <button
               type="button"

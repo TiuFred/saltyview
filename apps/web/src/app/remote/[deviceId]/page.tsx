@@ -2,12 +2,13 @@
 
 import { use, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ACCommand, DeviceDto } from '@casa/shared-types';
+import type { DeviceCommand, DeviceDto } from '@casa/shared-types';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useRealtimeDevices } from '@/lib/use-realtime-devices';
 import { LgAcRemoteControl } from '@/components/devices/ac-remotes/LgAcRemoteControl';
 import { SamsungAcRemoteControl } from '@/components/devices/ac-remotes/SamsungAcRemoteControl';
+import { SamsungTvRemoteControl } from '@/components/devices/tv-remotes/SamsungTvRemoteControl';
 
 export default function RemoteControlPage({ params }: { params: Promise<{ deviceId: string }> }) {
   const { deviceId } = use(params);
@@ -41,7 +42,7 @@ export default function RemoteControlPage({ params }: { params: Promise<{ device
     setDevice((prev) => (prev ? { ...prev, state: event.state, online: event.online, updatedAt: event.updatedAt } : prev));
   });
 
-  async function sendCommand(command: ACCommand) {
+  async function sendCommand(command: DeviceCommand) {
     if (!accessToken) return;
     try {
       const updated = await apiClient.sendCommand(accessToken, deviceId, command);
@@ -69,7 +70,13 @@ export default function RemoteControlPage({ params }: { params: Promise<{ device
         <SamsungAcRemoteControl device={device} onCommand={sendCommand} />
       )}
 
-      {device && device.type !== 'AC' && <p className="text-sm text-muted">Ainda não há um controle remoto para este tipo de dispositivo.</p>}
+      {device && device.type === 'TV' && device.provider === 'SMARTTHINGS' && (
+        <SamsungTvRemoteControl device={device} onCommand={sendCommand} />
+      )}
+
+      {device && device.type === 'TV' && device.provider !== 'SMARTTHINGS' && (
+        <p className="text-sm text-muted">Ainda não há um controle remoto para este tipo de dispositivo.</p>
+      )}
     </div>
   );
 }
