@@ -23,6 +23,7 @@ interface DeviceCardProps {
 export function DeviceCard({ icon, name, online, powerOn, turnedOnBy, busy, onTogglePower, nameHref, onRename, onRemove, onChangeIcon, adminExtra, children }: DeviceCardProps) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(name);
+  const [tagsOpen, setTagsOpen] = useState(false);
   return (
     <motion.div
       layout
@@ -92,6 +93,18 @@ export function DeviceCard({ icon, name, online, powerOn, turnedOnBy, busy, onTo
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {adminExtra && (
+            <button
+              type="button"
+              onClick={() => setTagsOpen((prev) => !prev)}
+              aria-expanded={tagsOpen}
+              className={`rounded-lg border px-2 py-1 text-xs transition ${
+                tagsOpen ? 'border-accent text-accent' : 'border-surface-border text-muted hover:text-foreground'
+              }`}
+            >
+              Tags
+            </button>
+          )}
           {onRename && !editing && (
             <button
               type="button"
@@ -133,7 +146,11 @@ export function DeviceCard({ icon, name, online, powerOn, turnedOnBy, busy, onTo
         </div>
       </div>
 
-      {adminExtra}
+      {adminExtra && tagsOpen && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+          {adminExtra}
+        </motion.div>
+      )}
 
       {powerOn && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex flex-col gap-4">

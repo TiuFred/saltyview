@@ -13,6 +13,7 @@ import { ACCard } from '@/components/devices/ACCard';
 import { TagFilterBar } from '@/components/tags/TagFilterBar';
 import { TagManagerModal } from '@/components/tags/TagManagerModal';
 import { UserPinManagerModal } from '@/components/users/UserPinManagerModal';
+import { AddDeviceModal } from '@/components/devices/AddDeviceModal';
 
 export default function DashboardPage() {
   const { user, accessToken, loading, logout } = useAuth();
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [householdUsers, setHouseholdUsers] = useState<UserSummaryDto[]>([]);
   const [pinManagerOpen, setPinManagerOpen] = useState(false);
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -148,6 +150,7 @@ export default function DashboardPage() {
       setDevices((prev) => [...prev, created]);
       setDeviceName('');
       setErrorMessage(null);
+      setAddDeviceOpen(false);
       await loadDevices();
     } catch (err) {
       setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível adicionar o aparelho.');
@@ -171,6 +174,7 @@ export default function DashboardPage() {
       setDevices((prev) => [...prev, created]);
       setDeviceName('');
       setErrorMessage(null);
+      setAddDeviceOpen(false);
       await loadDevices();
     } catch (err) {
       setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível adicionar o aparelho.');
@@ -297,7 +301,14 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <TagFilterBar tags={tags} selectedTagId={selectedTagId} onToggle={toggleTagFilter} onClear={() => setSelectedTagId(null)} />
         {isAdmin && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAddDeviceOpen(true)}
+              className="rounded-xl bg-accent px-3 py-1.5 text-xs font-medium text-white"
+            >
+              Adicionar aparelho
+            </button>
             <button
               type="button"
               onClick={() => setPinManagerOpen(true)}
@@ -316,107 +327,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {isAdmin && (
-        <section className="glass-card rounded-3xl p-6 space-y-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end">
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold">Adicionar aparelho LG</h2>
-              <p className="text-sm text-muted">Descubra aparelhos da sua conta LG ThinQ e adicione ao banco.</p>
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <label className="text-sm text-muted" htmlFor="lg-device-select">Aparelho LG</label>
-              <select
-                id="lg-device-select"
-                value={selectedLgDeviceId}
-                onChange={(event) => setSelectedLgDeviceId(event.target.value)}
-                className="rounded-xl border border-surface-border bg-transparent px-3 py-2 text-sm"
-              >
-                {availableLgDevices.length === 0 ? (
-                  <option value="">Nenhum aparelho encontrado</option>
-                ) : (
-                  availableLgDevices.map((device) => (
-                    <option key={device.id} value={device.id}>
-                      {device.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <label className="text-sm text-muted" htmlFor="lg-device-name">Nome no painel</label>
-              <input
-                id="lg-device-name"
-                value={deviceName}
-                onChange={(event) => setDeviceName(event.target.value)}
-                placeholder="Ex.: Ar Quarto"
-                className="rounded-xl border border-surface-border bg-transparent px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={addLgDevice}
-              className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white"
-            >
-              Adicionar
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-4 md:flex-row md:items-end">
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold">Adicionar aparelho Samsung</h2>
-              <p className="text-sm text-muted">Descubra aparelhos da sua conta SmartThings e adicione ao banco.</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-muted" htmlFor="smartthings-device-type">Tipo</label>
-              <select
-                id="smartthings-device-type"
-                value={smartThingsDeviceType}
-                onChange={(event) => setSmartThingsDeviceType(event.target.value as DeviceType)}
-                className="rounded-xl border border-surface-border bg-transparent px-3 py-2 text-sm"
-              >
-                <option value="TV">TV</option>
-                <option value="AC">Ar Condicionado</option>
-              </select>
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <label className="text-sm text-muted" htmlFor="smartthings-device-select">Aparelho SmartThings</label>
-              <select
-                id="smartthings-device-select"
-                value={selectedSmartThingsDeviceId}
-                onChange={(event) => setSelectedSmartThingsDeviceId(event.target.value)}
-                className="rounded-xl border border-surface-border bg-transparent px-3 py-2 text-sm"
-              >
-                {availableSmartThingsDevices.length === 0 ? (
-                  <option value="">Nenhum aparelho encontrado</option>
-                ) : (
-                  availableSmartThingsDevices.map((device) => (
-                    <option key={device.id} value={device.id}>
-                      {device.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <label className="text-sm text-muted" htmlFor="smartthings-device-name">Nome no painel</label>
-              <input
-                id="smartthings-device-name"
-                value={deviceName}
-                onChange={(event) => setDeviceName(event.target.value)}
-                placeholder="Ex.: TV Sala"
-                className="rounded-xl border border-surface-border bg-transparent px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={addSmartThingsDevice}
-              className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white"
-            >
-              Adicionar
-            </button>
-          </div>
-        </section>
-      )}
 
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {devicesLoading && <p className="text-sm text-muted">Carregando dispositivos…</p>}
@@ -466,6 +376,25 @@ export default function DashboardPage() {
           onClose={() => setPinManagerOpen(false)}
           users={householdUsers}
           onUpdatePin={updateUserPin}
+        />
+      )}
+
+      {isAdmin && (
+        <AddDeviceModal
+          open={addDeviceOpen}
+          onClose={() => setAddDeviceOpen(false)}
+          availableLgDevices={availableLgDevices}
+          selectedLgDeviceId={selectedLgDeviceId}
+          onSelectLgDeviceId={setSelectedLgDeviceId}
+          availableSmartThingsDevices={availableSmartThingsDevices}
+          selectedSmartThingsDeviceId={selectedSmartThingsDeviceId}
+          onSelectSmartThingsDeviceId={setSelectedSmartThingsDeviceId}
+          smartThingsDeviceType={smartThingsDeviceType}
+          onSelectSmartThingsDeviceType={setSmartThingsDeviceType}
+          deviceName={deviceName}
+          onChangeDeviceName={setDeviceName}
+          onAddLgDevice={addLgDevice}
+          onAddSmartThingsDevice={addSmartThingsDevice}
         />
       )}
 
