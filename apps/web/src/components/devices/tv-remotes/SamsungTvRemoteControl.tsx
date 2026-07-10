@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import type { DeviceDto, TVCommand, TVState } from '@casa/shared-types';
 
-const APPS: { key: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus'; label: string; emoji: string }[] = [
+const APPS: { key: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus' | 'globoplay'; label: string; emoji: string }[] = [
   { key: 'netflix', label: 'Netflix', emoji: '🎬' },
   { key: 'youtube', label: 'YouTube', emoji: '▶️' },
   { key: 'primevideo', label: 'Prime Video', emoji: '📺' },
   { key: 'disneyplus', label: 'Disney+', emoji: '✨' },
+  { key: 'globoplay', label: 'Globoplay', emoji: '🌐' },
 ];
 
 const INPUTS = ['HDMI1', 'HDMI2', 'HDMI3', 'digitalTv'];

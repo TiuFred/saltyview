@@ -12,6 +12,7 @@ import type {
   DeviceCommand,
   DeviceDto,
   ProviderDeviceDto,
+  TVState,
   UpdateDeviceIconDto,
   UpdateDeviceNameDto,
 } from '@casa/shared-types';
@@ -152,6 +153,16 @@ export class DevicesService {
         provider.fetchState(device.externalId, device.type),
         provider.isOnline(device.externalId),
       ]);
+
+      // Algumas TVs (Samsung/SmartThings) não reportam volume/mudo de volta imediatamente após
+      // o comando — sobrescreve com o valor que acabou de ser enviado com sucesso, pra tela não
+      // parecer travada mesmo quando o comando já surtiu efeito no aparelho real.
+      if (command.type === 'volume' && 'volume' in state) {
+        (state as TVState).volume = command.value;
+      }
+      if (command.type === 'mute' && 'muted' in state) {
+        (state as TVState).muted = command.value;
+      }
 
       const updated = await this.prisma.device.update({
         where: { id },

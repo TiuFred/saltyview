@@ -102,7 +102,7 @@ export type TVCommand =
   | { type: 'volume'; value: number }
   | { type: 'mute'; value: boolean }
   | { type: 'input'; value: string }
-  | { type: 'launchApp'; value: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus' };
+  | { type: 'launchApp'; value: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus' | 'globoplay' };
 
 export type ACCommand =
   | { type: 'power'; value: 'on' | 'off' }

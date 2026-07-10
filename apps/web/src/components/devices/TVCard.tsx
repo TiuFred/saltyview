@@ -5,11 +5,12 @@ import type { DeviceDto, TVCommand, TVState, TagDto } from '@casa/shared-types';
 import { DeviceCard } from './DeviceCard';
 import { DeviceTagSelector } from '../tags/DeviceTagSelector';
 
-const APPS: { key: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus'; label: string }[] = [
+const APPS: { key: 'netflix' | 'youtube' | 'primevideo' | 'disneyplus' | 'globoplay'; label: string }[] = [
   { key: 'netflix', label: 'Netflix' },
   { key: 'youtube', label: 'YouTube' },
   { key: 'primevideo', label: 'Prime Video' },
   { key: 'disneyplus', label: 'Disney+' },
+  { key: 'globoplay', label: 'Globoplay' },
 ];
 
 const INPUTS = ['HDMI1', 'HDMI2', 'HDMI3', 'digitalTv'];
@@ -100,7 +101,7 @@ export function TVCard({ device, onCommand, onRename, onRemove, onChangeIcon, al
         </select>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {APPS.map((app) => (
           <button
             key={app.key}
