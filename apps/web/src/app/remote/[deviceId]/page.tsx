@@ -57,26 +57,37 @@ export default function RemoteControlPage({ params }: { params: Promise<{ device
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-16">
-      {error && <p className="text-sm text-danger">{error}</p>}
+    <div className="flex flex-1 flex-col items-center gap-6 px-6 py-10">
+      <button
+        type="button"
+        onClick={() => router.push('/dashboard')}
+        className="flex items-center gap-1.5 self-start rounded-xl border border-surface-border px-3 py-2 text-sm text-muted transition hover:text-foreground"
+      >
+        <span aria-hidden="true">←</span>
+        Voltar
+      </button>
 
-      {!device && !error && <p className="text-sm text-muted">Carregando controle remoto…</p>}
+      <div className="flex flex-1 flex-col items-center justify-center gap-6">
+        {error && <p className="text-sm text-danger">{error}</p>}
 
-      {device && device.type === 'AC' && device.provider === 'LG_THINQ' && (
-        <LgAcRemoteControl device={device} onCommand={sendCommand} />
-      )}
+        {!device && !error && <p className="text-sm text-muted">Carregando controle remoto…</p>}
 
-      {device && device.type === 'AC' && device.provider === 'SMARTTHINGS' && (
-        <SamsungAcRemoteControl device={device} onCommand={sendCommand} />
-      )}
+        {device && device.type === 'AC' && device.provider === 'LG_THINQ' && (
+          <LgAcRemoteControl device={device} onCommand={sendCommand} />
+        )}
 
-      {device && device.type === 'TV' && device.provider === 'SMARTTHINGS' && (
-        <SamsungTvRemoteControl device={device} onCommand={sendCommand} />
-      )}
+        {device && device.type === 'AC' && device.provider === 'SMARTTHINGS' && (
+          <SamsungAcRemoteControl device={device} onCommand={sendCommand} />
+        )}
 
-      {device && device.type === 'TV' && device.provider !== 'SMARTTHINGS' && (
-        <p className="text-sm text-muted">Ainda não há um controle remoto para este tipo de dispositivo.</p>
-      )}
+        {device && device.type === 'TV' && device.provider === 'SMARTTHINGS' && (
+          <SamsungTvRemoteControl device={device} onCommand={sendCommand} />
+        )}
+
+        {device && device.type === 'TV' && device.provider !== 'SMARTTHINGS' && (
+          <p className="text-sm text-muted">Ainda não há um controle remoto para este tipo de dispositivo.</p>
+        )}
+      </div>
     </div>
   );
 }
