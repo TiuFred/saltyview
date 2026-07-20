@@ -11,6 +11,10 @@ export interface JwtPayload {
   name: string;
 }
 
+function normalizePin(value: string | undefined): string {
+  return (value ?? '').trim().replace(/^['"]|['"]$/g, '');
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -41,10 +45,11 @@ export class AuthService {
     pin: string,
   ): Promise<AuthenticatedUserDto> {
     if (this.usersService.isAdminAlias(name)) {
-      const configuredPin = this.config.get<string>('SEED_ADMIN_PIN');
+      const configuredPin = normalizePin(this.config.get<string>('SEED_ADMIN_PIN'));
+      const providedPin = normalizePin(pin);
 
-      if (configuredPin && pin === configuredPin) {
-        const adminUser = await this.usersService.ensureConfiguredAdminAccount(pin);
+      if (configuredPin && providedPin === configuredPin) {
+        const adminUser = await this.usersService.ensureConfiguredAdminAccount(providedPin);
         return this.usersService.toAuthenticatedUser(adminUser);
       }
     }

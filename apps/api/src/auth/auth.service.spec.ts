@@ -30,7 +30,7 @@ describe('AuthService', () => {
     getOrThrow: jest.fn((key: string) =>
       key.includes('SECRET') ? `${key}-value` : key,
     ),
-    get: jest.fn((key: string, fallback?: string) => (key === 'SEED_ADMIN_PIN' ? '0000' : fallback)),
+    get: jest.fn((key: string, fallback?: string) => (key === 'SEED_ADMIN_PIN' ? ' "0000" ' : fallback)),
   };
 
   let authService: AuthService;
@@ -80,6 +80,7 @@ describe('AuthService', () => {
       usersService.ensureConfiguredAdminAccount.mockResolvedValueOnce({ ...user, name: 'Administrador', pinHash: bcrypt.hashSync('0000', 10) });
       const result = await authService.validatePinCredentials('Administrador', '0000');
       expect(result).toEqual({ id: user.id, name: user.name, email: user.email, isAdmin: true });
+      expect(usersService.ensureConfiguredAdminAccount).toHaveBeenCalledWith('0000');
     });
 
     it('returns the authenticated user when a household PIN is valid', async () => {
