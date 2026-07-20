@@ -79,7 +79,7 @@ describe('AuthService', () => {
       usersService.isAdminAlias.mockReturnValueOnce(true);
       usersService.ensureConfiguredAdminAccount.mockResolvedValueOnce({ ...user, name: 'Administrador', pinHash: bcrypt.hashSync('0000', 10) });
       const result = await authService.validatePinCredentials('Administrador', '0000');
-      expect(result).toEqual({ id: user.id, name: user.name, email: user.email, isAdmin: true });
+      expect(result).toEqual({ id: user.id, name: 'Administrador', email: user.email, isAdmin: true });
       expect(usersService.ensureConfiguredAdminAccount).toHaveBeenCalledWith('0000');
     });
 
