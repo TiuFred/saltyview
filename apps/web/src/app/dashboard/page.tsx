@@ -55,6 +55,8 @@ export default function DashboardPage() {
       return;
     }
 
+    const token = accessToken;
+
     let cancelled = false;
 
     async function loadDashboardData() {
@@ -62,8 +64,8 @@ export default function DashboardPage() {
 
       try {
         const [deviceList, tagList] = await Promise.all([
-          apiClient.listDevices(accessToken),
-          apiClient.listTags(accessToken),
+          apiClient.listDevices(token),
+          apiClient.listTags(token),
         ]);
 
         if (cancelled) {
@@ -96,8 +98,8 @@ export default function DashboardPage() {
       try {
         const [users, lgDevices, smartThingsDevices] = await Promise.all([
           apiClient.listUsers(),
-          apiClient.listAvailableLgDevices(accessToken),
-          apiClient.listAvailableSmartThingsDevices(accessToken),
+          apiClient.listAvailableLgDevices(token),
+          apiClient.listAvailableSmartThingsDevices(token),
         ]);
 
         if (cancelled) {
@@ -133,14 +135,16 @@ export default function DashboardPage() {
 
   async function reloadDevices() {
     if (!accessToken) return;
-    const list = await apiClient.listDevices(accessToken);
+    const token = accessToken;
+    const list = await apiClient.listDevices(token);
     setDevices(list);
   }
 
   async function sendCommand(deviceId: string, command: DeviceCommand) {
     if (!accessToken) return;
+    const token = accessToken;
     try {
-      const updated = await apiClient.sendCommand(accessToken, deviceId, command);
+      const updated = await apiClient.sendCommand(token, deviceId, command);
       setDevices((prev) => prev.map((device) => (device.id === deviceId ? updated : device)));
     } catch (err) {
       setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível enviar o comando. Tente novamente.');
@@ -149,6 +153,7 @@ export default function DashboardPage() {
 
   async function addLgDevice() {
     if (!accessToken || !selectedLgDeviceId) return;
+    const token = accessToken;
     const selectedDevice = availableLgDevices.find((device) => device.id === selectedLgDeviceId);
     if (!selectedDevice) return;
 
@@ -160,7 +165,7 @@ export default function DashboardPage() {
     };
 
     try {
-      const created = await apiClient.createDevice(accessToken, payload);
+      const created = await apiClient.createDevice(token, payload);
       setDevices((prev) => [...prev, created]);
       setDeviceName('');
       setErrorMessage(null);
@@ -173,6 +178,7 @@ export default function DashboardPage() {
 
   async function addSmartThingsDevice() {
     if (!accessToken || !selectedSmartThingsDeviceId) return;
+    const token = accessToken;
     const selectedDevice = availableSmartThingsDevices.find((device) => device.id === selectedSmartThingsDeviceId);
     if (!selectedDevice) return;
 
@@ -184,7 +190,7 @@ export default function DashboardPage() {
     };
 
     try {
-      const created = await apiClient.createDevice(accessToken, payload);
+      const created = await apiClient.createDevice(token, payload);
       setDevices((prev) => [...prev, created]);
       setDeviceName('');
       setErrorMessage(null);
@@ -197,8 +203,9 @@ export default function DashboardPage() {
 
   async function renameDevice(deviceId: string, newName: string) {
     if (!accessToken || !isAdmin) return;
+    const token = accessToken;
     try {
-      const updated = await apiClient.updateDeviceName(accessToken, deviceId, { name: newName.trim() });
+      const updated = await apiClient.updateDeviceName(token, deviceId, { name: newName.trim() });
       setDevices((prev) => prev.map((device) => (device.id === deviceId ? updated : device)));
       setErrorMessage(null);
     } catch (err) {
@@ -208,8 +215,9 @@ export default function DashboardPage() {
 
   async function changeDeviceIcon(deviceId: string, icon: string) {
     if (!accessToken || !isAdmin) return;
+    const token = accessToken;
     try {
-      const updated = await apiClient.updateDeviceIcon(accessToken, deviceId, { icon });
+      const updated = await apiClient.updateDeviceIcon(token, deviceId, { icon });
       setDevices((prev) => prev.map((device) => (device.id === deviceId ? updated : device)));
       setErrorMessage(null);
     } catch (err) {
@@ -219,8 +227,9 @@ export default function DashboardPage() {
 
   async function changeDeviceTags(deviceId: string, tagIds: string[]) {
     if (!accessToken || !isAdmin) return;
+    const token = accessToken;
     try {
-      const updated = await apiClient.setDeviceTags(accessToken, deviceId, { tagIds });
+      const updated = await apiClient.setDeviceTags(token, deviceId, { tagIds });
       setDevices((prev) => prev.map((device) => (device.id === deviceId ? updated : device)));
       setErrorMessage(null);
     } catch (err) {
@@ -230,8 +239,9 @@ export default function DashboardPage() {
 
   async function removeDeviceFromList(deviceId: string) {
     if (!accessToken || !isAdmin) return;
+    const token = accessToken;
     try {
-      await apiClient.removeDevice(accessToken, deviceId);
+      await apiClient.removeDevice(token, deviceId);
       setDevices((prev) => prev.filter((device) => device.id !== deviceId));
       setErrorMessage(null);
     } catch (err) {
@@ -241,14 +251,16 @@ export default function DashboardPage() {
 
   async function createTag(name: string) {
     if (!accessToken) return;
-    const created = await apiClient.createTag(accessToken, { name });
+    const token = accessToken;
+    const created = await apiClient.createTag(token, { name });
     setTags((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
     setErrorMessage(null);
   }
 
   async function renameTag(tagId: string, name: string) {
     if (!accessToken) return;
-    const updated = await apiClient.updateTag(accessToken, tagId, { name });
+    const token = accessToken;
+    const updated = await apiClient.updateTag(token, tagId, { name });
     setTags((prev) => prev.map((tag) => (tag.id === tagId ? updated : tag)));
     await reloadDevices();
     setErrorMessage(null);
@@ -256,7 +268,8 @@ export default function DashboardPage() {
 
   async function deleteTag(tagId: string) {
     if (!accessToken) return;
-    await apiClient.deleteTag(accessToken, tagId);
+    const token = accessToken;
+    await apiClient.deleteTag(token, tagId);
     setTags((prev) => prev.filter((tag) => tag.id !== tagId));
     setSelectedTagId((prev) => (prev === tagId ? null : prev));
     await reloadDevices();
@@ -265,12 +278,14 @@ export default function DashboardPage() {
 
   async function getTagUsage(tagId: string) {
     if (!accessToken) return { deviceCount: 0 };
-    return apiClient.getTagUsage(accessToken, tagId);
+    const token = accessToken;
+    return apiClient.getTagUsage(token, tagId);
   }
 
   async function updateUserPin(userId: string, pin: string) {
     if (!accessToken) return;
-    await apiClient.updateUserPin(accessToken, userId, { pin });
+    const token = accessToken;
+    await apiClient.updateUserPin(token, userId, { pin });
   }
 
   function toggleTagFilter(tagId: string) {

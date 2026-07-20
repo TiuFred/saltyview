@@ -25,8 +25,9 @@ export default function RemoteControlPage({ params }: { params: Promise<{ device
 
   const loadDevice = useCallback(async () => {
     if (!accessToken) return;
+    const token = accessToken;
     try {
-      const result = await apiClient.getDevice(accessToken, deviceId);
+      const result = await apiClient.getDevice(token, deviceId);
       setDevice(result);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível carregar o dispositivo.');
@@ -44,8 +45,9 @@ export default function RemoteControlPage({ params }: { params: Promise<{ device
 
   async function sendCommand(command: DeviceCommand) {
     if (!accessToken) return;
+    const token = accessToken;
     try {
-      const updated = await apiClient.sendCommand(accessToken, deviceId, command);
+      const updated = await apiClient.sendCommand(token, deviceId, command);
       setDevice(updated);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível enviar o comando.');
