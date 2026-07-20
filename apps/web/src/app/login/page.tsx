@@ -9,6 +9,7 @@ import type { UserSummaryDto } from '@casa/shared-types';
 
 const GUEST_NAME = 'Visitante';
 const ADMIN_NAME = 'adm';
+const ADMIN_LABEL = 'ADM';
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -19,6 +20,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const pinInputs = useRef<Array<HTMLInputElement | null>>([]);
+  const profileOptions = [
+    { id: 'quick-guest', name: GUEST_NAME, label: GUEST_NAME },
+    { id: 'quick-admin', name: ADMIN_NAME, label: ADMIN_LABEL },
+    ...users
+      .filter((userOption) => userOption.name !== GUEST_NAME && userOption.name !== ADMIN_NAME)
+      .map((userOption) => ({ id: userOption.id, name: userOption.name, label: userOption.name })),
+  ];
 
   useEffect(() => {
     if (!loading && user) {
@@ -99,23 +107,36 @@ export default function LoginPage() {
                 className="flex-1 rounded-xl border border-surface-border bg-black/[0.02] px-4 py-2.5 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent-soft dark:bg-white/[0.03]"
               >
                 <option value="">Selecione alguém</option>
-                {users.map((userOption) => (
-                  <option key={userOption.id} value={userOption.name}>
-                    {userOption.name}
+                {profileOptions.map((profileOption) => (
+                  <option key={profileOption.id} value={profileOption.name}>
+                    {profileOption.label}
                   </option>
                 ))}
               </select>
-              <button
-                type="button"
-                onClick={() => selectQuick(GUEST_NAME)}
-                className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
-                  name === GUEST_NAME
-                    ? 'border-accent bg-accent-soft text-accent'
-                    : 'border-surface-border text-muted hover:text-foreground'
-                }`}
-              >
-                Visitante
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectQuick(GUEST_NAME)}
+                  className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                    name === GUEST_NAME
+                      ? 'border-accent bg-accent-soft text-accent'
+                      : 'border-surface-border text-muted hover:text-foreground'
+                  }`}
+                >
+                  Visitante
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectQuick(ADMIN_NAME)}
+                  className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                    name === ADMIN_NAME
+                      ? 'border-accent bg-accent-soft text-accent'
+                      : 'border-surface-border text-muted hover:text-foreground'
+                  }`}
+                >
+                  {ADMIN_LABEL}
+                </button>
+              </div>
             </div>
           </label>
 
@@ -149,16 +170,6 @@ export default function LoginPage() {
             className="mt-2 rounded-xl bg-accent px-4 py-2.5 font-medium text-white transition hover:brightness-110 disabled:opacity-60"
           >
             {submitting ? 'Entrando…' : 'Entrar'}
-          </button>
-        </div>
-
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() => selectQuick(ADMIN_NAME)}
-            className="text-xs text-muted underline underline-offset-2 hover:text-foreground"
-          >
-            Entrar como admin
           </button>
         </div>
       </motion.form>
