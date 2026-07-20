@@ -6,8 +6,8 @@ interface RequestWithUser {
   user: RequestUser;
 }
 
-// Só existe um "admin" hoje: o e-mail configurado em SEED_ADMIN_EMAIL. Precisa rodar depois do
-// JwtAuthGuard (que popula request.user).
+// O perfil admin atual pode ser identificado pelo e-mail ou pelo nome configurados no ambiente.
+// Precisa rodar depois do JwtAuthGuard (que popula request.user).
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(private readonly config: ConfigService) {}
@@ -15,8 +15,9 @@ export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
+    const adminName = this.config.get<string>('SEED_ADMIN_NAME');
 
-    if (request.user?.email !== adminEmail) {
+    if (request.user?.email !== adminEmail && request.user?.name !== adminName) {
       throw new ForbiddenException('Apenas o administrador pode realizar esta ação.');
     }
 

@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 export interface JwtPayload {
   sub: string;
   email: string;
+  name: string;
 }
 
 @Injectable()
@@ -53,7 +54,7 @@ export class AuthService {
   }
 
   issueTokens(user: AuthenticatedUserDto): AuthTokensDto {
-    const payload: JwtPayload = { sub: user.id, email: user.email };
+    const payload: JwtPayload = { sub: user.id, email: user.email, name: user.name };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),

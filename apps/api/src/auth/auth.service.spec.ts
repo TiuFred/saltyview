@@ -20,7 +20,7 @@ describe('AuthService', () => {
       id: currentUser.id,
       name: currentUser.name,
       email: currentUser.email,
-      isAdmin: currentUser.email === 'admin@example.com',
+      isAdmin: currentUser.email === 'admin@example.com' || currentUser.name === 'Fred',
     })),
   };
   const config = {

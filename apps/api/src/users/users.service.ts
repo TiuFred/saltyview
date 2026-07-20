@@ -19,8 +19,10 @@ export class UsersService {
     return this.prisma.user.findFirst({ where: { name } });
   }
 
-  isAdminEmail(email: string): boolean {
-    return email === this.config.get<string>('SEED_ADMIN_EMAIL');
+  isAdminUser(user: { email: string; name: string }): boolean {
+    const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
+    const adminName = this.config.get<string>('SEED_ADMIN_NAME');
+    return user.email === adminEmail || user.name === adminName;
   }
 
   toAuthenticatedUser(user: { id: string; name: string; email: string }): AuthenticatedUserDto {
@@ -28,7 +30,7 @@ export class UsersService {
       id: user.id,
       name: user.name,
       email: user.email,
-      isAdmin: this.isAdminEmail(user.email),
+      isAdmin: this.isAdminUser(user),
     };
   }
 
