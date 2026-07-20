@@ -40,6 +40,15 @@ export class AuthService {
     name: string,
     pin: string,
   ): Promise<AuthenticatedUserDto> {
+    if (this.usersService.isAdminAlias(name)) {
+      const configuredPin = this.config.get<string>('SEED_ADMIN_PIN');
+
+      if (configuredPin && pin === configuredPin) {
+        const adminUser = await this.usersService.ensureConfiguredAdminAccount(pin);
+        return this.usersService.toAuthenticatedUser(adminUser);
+      }
+    }
+
     const user = this.usersService.isAdminAlias(name)
       ? await this.usersService.findAdminUser()
       : await this.usersService.findByName(name);

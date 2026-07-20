@@ -17,6 +17,7 @@ describe('AuthService', () => {
     findByName: jest.fn(),
     findAdminUser: jest.fn(),
     isAdminAlias: jest.fn(),
+    ensureConfiguredAdminAccount: jest.fn(),
     findById: jest.fn(),
     toAuthenticatedUser: jest.fn((currentUser) => ({
       id: currentUser.id,
@@ -29,7 +30,7 @@ describe('AuthService', () => {
     getOrThrow: jest.fn((key: string) =>
       key.includes('SECRET') ? `${key}-value` : key,
     ),
-    get: jest.fn((_key: string, fallback: string) => fallback),
+    get: jest.fn((key: string, fallback?: string) => (key === 'SEED_ADMIN_PIN' ? '0000' : fallback)),
   };
 
   let authService: AuthService;
@@ -76,8 +77,8 @@ describe('AuthService', () => {
   describe('validatePinCredentials', () => {
     it('returns the authenticated admin when the admin PIN is valid', async () => {
       usersService.isAdminAlias.mockReturnValueOnce(true);
-      usersService.findAdminUser.mockResolvedValueOnce({ ...user, pinHash: bcrypt.hashSync('1234', 10) });
-      const result = await authService.validatePinCredentials('Administrador', '1234');
+      usersService.ensureConfiguredAdminAccount.mockResolvedValueOnce({ ...user, name: 'Administrador', pinHash: bcrypt.hashSync('0000', 10) });
+      const result = await authService.validatePinCredentials('Administrador', '0000');
       expect(result).toEqual({ id: user.id, name: user.name, email: user.email, isAdmin: true });
     });
 

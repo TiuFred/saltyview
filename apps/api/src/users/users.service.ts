@@ -48,6 +48,38 @@ export class UsersService {
     return normalized === configuredName || ADMIN_NAME_ALIASES.some((alias) => alias.toLowerCase() === normalized);
   }
 
+  async ensureConfiguredAdminAccount(pin: string) {
+    const adminName = this.config.get<string>('SEED_ADMIN_NAME') ?? DEFAULT_ADMIN_DISPLAY_NAME;
+    const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL') ?? LEGACY_ADMIN_EMAIL;
+    const adminPassword = this.config.get<string>('SEED_ADMIN_PASSWORD') ?? 'change-me';
+
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    const pinHash = await bcrypt.hash(pin, 12);
+
+    const existingAdmin = await this.findAdminUser();
+
+    if (existingAdmin) {
+      return this.prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          name: adminName,
+          email: adminEmail,
+          passwordHash,
+          pinHash,
+        },
+      });
+    }
+
+    return this.prisma.user.create({
+      data: {
+        name: adminName,
+        email: adminEmail,
+        passwordHash,
+        pinHash,
+      },
+    });
+  }
+
   isAdminUser(user: { email: string; name: string }): boolean {
     const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
     const adminName = this.config.get<string>('SEED_ADMIN_NAME');
