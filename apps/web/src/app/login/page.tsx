@@ -8,6 +8,7 @@ import { ApiError, apiClient } from '@/lib/api-client';
 import type { UserSummaryDto } from '@casa/shared-types';
 
 const GUEST_NAME = 'Visitante';
+const ADMIN_NAME = 'Admin';
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -98,9 +99,9 @@ export default function LoginPage() {
                 className="flex-1 rounded-xl border border-surface-border bg-black/[0.02] px-4 py-2.5 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent-soft dark:bg-white/[0.03]"
               >
                 <option value="">Selecione alguém</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.name}>
-                    {user.name}
+                {users.map((userOption) => (
+                  <option key={userOption.id} value={userOption.name}>
+                    {userOption.name}
                   </option>
                 ))}
               </select>
@@ -151,6 +152,15 @@ export default function LoginPage() {
           </button>
         </div>
 
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => selectQuick(ADMIN_NAME)}
+            className="text-xs text-muted underline underline-offset-2 hover:text-foreground"
+          >
+            Entrar como admin
+          </button>
+        </div>
       </motion.form>
     </div>
   );

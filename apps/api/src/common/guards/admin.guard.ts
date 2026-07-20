@@ -6,6 +6,9 @@ interface RequestWithUser {
   user: RequestUser;
 }
 
+const LEGACY_ADMIN_NAME = 'Admin';
+const LEGACY_ADMIN_EMAIL = 'admin@example.com';
+
 // O perfil admin atual pode ser identificado pelo e-mail ou pelo nome configurados no ambiente.
 // Precisa rodar depois do JwtAuthGuard (que popula request.user).
 @Injectable()
@@ -17,7 +20,13 @@ export class AdminGuard implements CanActivate {
     const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
     const adminName = this.config.get<string>('SEED_ADMIN_NAME');
 
-    if (request.user?.email !== adminEmail && request.user?.name !== adminName) {
+    const isAdmin =
+      request.user?.email === adminEmail ||
+      request.user?.name === adminName ||
+      request.user?.email === LEGACY_ADMIN_EMAIL ||
+      request.user?.name === LEGACY_ADMIN_NAME;
+
+    if (!isAdmin) {
       throw new ForbiddenException('Apenas o administrador pode realizar esta ação.');
     }
 
