@@ -7,6 +7,7 @@ interface RequestWithUser {
 }
 
 const LEGACY_ADMIN_NAME = 'Admin';
+const DEFAULT_ADMIN_NAME = 'adm';
 const LEGACY_ADMIN_EMAIL = 'admin@example.com';
 
 // O perfil admin atual pode ser identificado pelo e-mail ou pelo nome configurados no ambiente.
@@ -23,6 +24,7 @@ export class AdminGuard implements CanActivate {
     const isAdmin =
       request.user?.email === adminEmail ||
       request.user?.name === adminName ||
+      request.user?.name === DEFAULT_ADMIN_NAME ||
       request.user?.email === LEGACY_ADMIN_EMAIL ||
       request.user?.name === LEGACY_ADMIN_NAME;
 

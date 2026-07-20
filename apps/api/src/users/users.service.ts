@@ -5,6 +5,7 @@ import type { AuthenticatedUserDto } from '@casa/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
 
 const LEGACY_ADMIN_NAME = 'Admin';
+const DEFAULT_ADMIN_NAME = 'adm';
 const LEGACY_ADMIN_EMAIL = 'admin@example.com';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class UsersService {
     return (
       user.email === adminEmail ||
       user.name === adminName ||
+      user.name === DEFAULT_ADMIN_NAME ||
       user.email === LEGACY_ADMIN_EMAIL ||
       user.name === LEGACY_ADMIN_NAME
     );
