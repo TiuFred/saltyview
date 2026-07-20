@@ -8,7 +8,6 @@ import { ApiError, apiClient } from '@/lib/api-client';
 import type { UserSummaryDto } from '@casa/shared-types';
 
 const GUEST_NAME = 'Visitante';
-const ADMIN_NAME = 'Admin';
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -152,15 +151,6 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() => selectQuick(ADMIN_NAME)}
-            className="text-xs text-muted underline underline-offset-2 hover:text-foreground"
-          >
-            Entrar como admin
-          </button>
-        </div>
       </motion.form>
     </div>
   );

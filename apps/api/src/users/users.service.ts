@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import type { AuthenticatedUserDto } from '@casa/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -18,11 +19,21 @@ export class UsersService {
     return this.prisma.user.findFirst({ where: { name } });
   }
 
-  // O admin não aparece no seletor de perfis (tela de login pública) — o acesso dele é
-  // só pelo link "Entrar como admin", não pela lista de nomes das pessoas da casa.
+  isAdminEmail(email: string): boolean {
+    return email === this.config.get<string>('SEED_ADMIN_EMAIL');
+  }
+
+  toAuthenticatedUser(user: { id: string; name: string; email: string }): AuthenticatedUserDto {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      isAdmin: this.isAdminEmail(user.email),
+    };
+  }
+
   listUsers() {
     return this.prisma.user.findMany({
-      where: { email: { not: this.config.get<string>('SEED_ADMIN_EMAIL') } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CreateDeviceDto, DeviceType, ProviderDeviceDto, TagDto, UserSummaryDto } from '@casa/shared-types';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -26,7 +26,6 @@ export default function DashboardPage() {
   const [selectedSmartThingsDeviceId, setSelectedSmartThingsDeviceId] = useState('');
   const [smartThingsDeviceType, setSmartThingsDeviceType] = useState<DeviceType>('TV');
   const [deviceName, setDeviceName] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tags, setTags] = useState<TagDto[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
@@ -35,6 +34,8 @@ export default function DashboardPage() {
   const [pinManagerOpen, setPinManagerOpen] = useState(false);
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
 
+  const isAdmin = user?.isAdmin ?? false;
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/login');
@@ -42,78 +43,85 @@ export default function DashboardPage() {
   }, [loading, user, router]);
 
   useEffect(() => {
-    setIsAdmin(user?.email === 'admin@example.com');
-  }, [user]);
-
-  const loadDevices = useCallback(async () => {
-    if (!accessToken) return;
-    const list = await apiClient.listDevices(accessToken);
-    setDevices(list);
-    setDevicesLoading(false);
-  }, [accessToken]);
-
-  useEffect(() => {
-    loadDevices();
-  }, [loadDevices]);
-
-  const loadTags = useCallback(async () => {
-    if (!accessToken) return;
-    try {
-      const list = await apiClient.listTags(accessToken);
-      setTags(list);
-    } catch {
-      setErrorMessage('Não foi possível carregar as tags.');
+    if (!accessToken) {
+      setDevices([]);
+      setTags([]);
+      setHouseholdUsers([]);
+      setAvailableLgDevices([]);
+      setAvailableSmartThingsDevices([]);
+      setSelectedLgDeviceId('');
+      setSelectedSmartThingsDeviceId('');
+      setDevicesLoading(false);
+      return;
     }
-  }, [accessToken]);
 
-  useEffect(() => {
-    loadTags();
-  }, [loadTags]);
+    let cancelled = false;
 
-  const loadHouseholdUsers = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
-    try {
-      const list = await apiClient.listUsers();
-      setHouseholdUsers(list);
-    } catch {
-      setErrorMessage('Não foi possível carregar as pessoas.');
-    }
-  }, [accessToken, isAdmin]);
+    async function loadDashboardData() {
+      setDevicesLoading(true);
 
-  useEffect(() => {
-    loadHouseholdUsers();
-  }, [loadHouseholdUsers]);
+      try {
+        const [deviceList, tagList] = await Promise.all([
+          apiClient.listDevices(accessToken),
+          apiClient.listTags(accessToken),
+        ]);
 
-  const loadAvailableLgDevices = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
-    try {
-      const list = await apiClient.listAvailableLgDevices(accessToken);
-      setAvailableLgDevices(list);
-      if (list[0]) {
-        setSelectedLgDeviceId(list[0].id);
+        if (cancelled) {
+          return;
+        }
+
+        setDevices(deviceList);
+        setTags(tagList);
+      } catch {
+        if (!cancelled) {
+          setErrorMessage('Não foi possível carregar os dados do dashboard.');
+        }
+      } finally {
+        if (!cancelled) {
+          setDevicesLoading(false);
+        }
       }
-    } catch {
-      setErrorMessage('Não foi possível listar aparelhos LG ThinQ.');
-    }
-  }, [accessToken, isAdmin]);
 
-  const loadAvailableSmartThingsDevices = useCallback(async () => {
-    if (!accessToken || !isAdmin) return;
-    try {
-      const list = await apiClient.listAvailableSmartThingsDevices(accessToken);
-      setAvailableSmartThingsDevices(list);
-      if (list[0]) {
-        setSelectedSmartThingsDeviceId(list[0].id);
+      if (!isAdmin) {
+        if (!cancelled) {
+          setHouseholdUsers([]);
+          setAvailableLgDevices([]);
+          setAvailableSmartThingsDevices([]);
+          setSelectedLgDeviceId('');
+          setSelectedSmartThingsDeviceId('');
+        }
+        return;
       }
-    } catch {
-      setErrorMessage('Não foi possível listar aparelhos SmartThings.');
-    }
-  }, [accessToken, isAdmin]);
 
-  useEffect(() => {
-    void loadAvailableLgDevices();
-    void loadAvailableSmartThingsDevices();
-  }, [loadAvailableLgDevices, loadAvailableSmartThingsDevices]);
+      try {
+        const [users, lgDevices, smartThingsDevices] = await Promise.all([
+          apiClient.listUsers(),
+          apiClient.listAvailableLgDevices(accessToken),
+          apiClient.listAvailableSmartThingsDevices(accessToken),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setHouseholdUsers(users);
+        setAvailableLgDevices(lgDevices);
+        setAvailableSmartThingsDevices(smartThingsDevices);
+        setSelectedLgDeviceId((current) => current || lgDevices[0]?.id || '');
+        setSelectedSmartThingsDeviceId((current) => current || smartThingsDevices[0]?.id || '');
+      } catch {
+        if (!cancelled) {
+          setErrorMessage('Não foi possível carregar os dados administrativos.');
+        }
+      }
+    }
+
+    void loadDashboardData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, isAdmin]);
 
   useRealtimeDevices(accessToken, (event) => {
     setDevices((prev) =>
@@ -122,6 +130,12 @@ export default function DashboardPage() {
       ),
     );
   });
+
+  async function reloadDevices() {
+    if (!accessToken) return;
+    const list = await apiClient.listDevices(accessToken);
+    setDevices(list);
+  }
 
   async function sendCommand(deviceId: string, command: DeviceCommand) {
     if (!accessToken) return;
@@ -151,7 +165,7 @@ export default function DashboardPage() {
       setDeviceName('');
       setErrorMessage(null);
       setAddDeviceOpen(false);
-      await loadDevices();
+      await reloadDevices();
     } catch (err) {
       setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível adicionar o aparelho.');
     }
@@ -175,7 +189,7 @@ export default function DashboardPage() {
       setDeviceName('');
       setErrorMessage(null);
       setAddDeviceOpen(false);
-      await loadDevices();
+      await reloadDevices();
     } catch (err) {
       setErrorMessage(err instanceof ApiError ? err.message : 'Não foi possível adicionar o aparelho.');
     }
@@ -229,13 +243,15 @@ export default function DashboardPage() {
     if (!accessToken) return;
     const created = await apiClient.createTag(accessToken, { name });
     setTags((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+    setErrorMessage(null);
   }
 
   async function renameTag(tagId: string, name: string) {
     if (!accessToken) return;
     const updated = await apiClient.updateTag(accessToken, tagId, { name });
     setTags((prev) => prev.map((tag) => (tag.id === tagId ? updated : tag)));
-    await loadDevices();
+    await reloadDevices();
+    setErrorMessage(null);
   }
 
   async function deleteTag(tagId: string) {
@@ -243,7 +259,8 @@ export default function DashboardPage() {
     await apiClient.deleteTag(accessToken, tagId);
     setTags((prev) => prev.filter((tag) => tag.id !== tagId));
     setSelectedTagId((prev) => (prev === tagId ? null : prev));
-    await loadDevices();
+    await reloadDevices();
+    setErrorMessage(null);
   }
 
   async function getTagUsage(tagId: string) {
@@ -326,7 +343,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-
 
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {devicesLoading && <p className="text-sm text-muted">Carregando dispositivos…</p>}

@@ -59,6 +59,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() currentUser: RequestUser) {
     const user = await this.usersService.findById(currentUser.id);
-    return { id: user!.id, name: user!.name, email: user!.email };
+    return this.usersService.toAuthenticatedUser(user!);
   }
 }

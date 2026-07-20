@@ -140,6 +140,7 @@ export interface AuthenticatedUserDto {
   id: string;
   name: string;
   email: string;
+  isAdmin: boolean;
 }
 
 export interface DeviceLogDto {

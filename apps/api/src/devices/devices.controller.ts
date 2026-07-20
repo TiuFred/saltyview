@@ -24,16 +24,19 @@ export class DevicesController {
   }
 
   @Get('lg-available')
+  @UseGuards(AdminGuard)
   listAvailableLgDevices() {
     return this.devicesService.listAvailableLgDevices();
   }
 
   @Get('smartthings-available')
+  @UseGuards(AdminGuard)
   listAvailableSmartThingsDevices() {
     return this.devicesService.listAvailableSmartThingsDevices();
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   createDevice(@Body() dto: CreateDeviceDto) {
     return this.devicesService.createDevice(dto);
   }

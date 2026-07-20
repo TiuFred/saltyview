@@ -32,7 +32,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    return { id: user.id, name: user.name, email: user.email };
+    return this.usersService.toAuthenticatedUser(user);
   }
 
   async validatePinCredentials(
@@ -49,7 +49,7 @@ export class AuthService {
       throw new UnauthorizedException('PIN inválido');
     }
 
-    return { id: user.id, name: user.name, email: user.email };
+    return this.usersService.toAuthenticatedUser(user);
   }
 
   issueTokens(user: AuthenticatedUserDto): AuthTokensDto {
@@ -89,10 +89,6 @@ export class AuthService {
       throw new UnauthorizedException('Usuário não encontrado');
     }
 
-    return this.issueTokens({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    });
+    return this.issueTokens(this.usersService.toAuthenticatedUser(user));
   }
 }

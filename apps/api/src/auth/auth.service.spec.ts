@@ -12,7 +12,17 @@ describe('AuthService', () => {
     passwordHash,
   };
 
-  const usersService = { findByEmail: jest.fn(), findByName: jest.fn(), findById: jest.fn() };
+  const usersService = {
+    findByEmail: jest.fn(),
+    findByName: jest.fn(),
+    findById: jest.fn(),
+    toAuthenticatedUser: jest.fn((currentUser) => ({
+      id: currentUser.id,
+      name: currentUser.name,
+      email: currentUser.email,
+      isAdmin: currentUser.email === 'admin@example.com',
+    })),
+  };
   const config = {
     getOrThrow: jest.fn((key: string) =>
       key.includes('SECRET') ? `${key}-value` : key,
@@ -56,6 +66,7 @@ describe('AuthService', () => {
         id: user.id,
         name: user.name,
         email: user.email,
+        isAdmin: true,
       });
     });
   });
@@ -64,7 +75,7 @@ describe('AuthService', () => {
     it('returns the authenticated user when the PIN is valid', async () => {
       usersService.findByName.mockResolvedValueOnce({ ...user, pinHash: bcrypt.hashSync('1234', 10) });
       const result = await authService.validatePinCredentials('Admin', '1234');
-      expect(result).toEqual({ id: user.id, name: user.name, email: user.email });
+      expect(result).toEqual({ id: user.id, name: user.name, email: user.email, isAdmin: true });
     });
 
     it('throws when the PIN does not match', async () => {
@@ -79,6 +90,7 @@ describe('AuthService', () => {
         id: user.id,
         name: user.name,
         email: user.email,
+        isAdmin: true,
       });
       expect(tokens.accessToken).toEqual(expect.any(String));
       expect(tokens.refreshToken).toEqual(expect.any(String));
