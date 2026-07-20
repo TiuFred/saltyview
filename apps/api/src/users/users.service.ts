@@ -6,7 +6,9 @@ import { PrismaService } from '../prisma/prisma.service';
 
 const LEGACY_ADMIN_NAME = 'Admin';
 const DEFAULT_ADMIN_NAME = 'adm';
+const DEFAULT_ADMIN_DISPLAY_NAME = 'Administrador';
 const LEGACY_ADMIN_EMAIL = 'admin@example.com';
+const ADMIN_NAME_ALIASES = [DEFAULT_ADMIN_DISPLAY_NAME, DEFAULT_ADMIN_NAME, LEGACY_ADMIN_NAME] as const;
 
 @Injectable()
 export class UsersService {
@@ -23,6 +25,29 @@ export class UsersService {
     return this.prisma.user.findFirst({ where: { name } });
   }
 
+  async findAdminUser() {
+    const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
+    const adminName = this.config.get<string>('SEED_ADMIN_NAME');
+
+    return this.prisma.user.findFirst({
+      where: {
+        OR: [
+          ...(adminEmail ? [{ email: adminEmail }] : []),
+          ...(adminName ? [{ name: adminName }] : []),
+          { email: LEGACY_ADMIN_EMAIL },
+          ...ADMIN_NAME_ALIASES.map((name) => ({ name })),
+        ],
+      },
+    });
+  }
+
+  isAdminAlias(name: string): boolean {
+    const normalized = name.trim().toLowerCase();
+    const configuredName = this.config.get<string>('SEED_ADMIN_NAME')?.trim().toLowerCase();
+
+    return normalized === configuredName || ADMIN_NAME_ALIASES.some((alias) => alias.toLowerCase() === normalized);
+  }
+
   isAdminUser(user: { email: string; name: string }): boolean {
     const adminEmail = this.config.get<string>('SEED_ADMIN_EMAIL');
     const adminName = this.config.get<string>('SEED_ADMIN_NAME');
@@ -30,6 +55,7 @@ export class UsersService {
       user.email === adminEmail ||
       user.name === adminName ||
       user.name === DEFAULT_ADMIN_NAME ||
+      user.name === DEFAULT_ADMIN_DISPLAY_NAME ||
       user.email === LEGACY_ADMIN_EMAIL ||
       user.name === LEGACY_ADMIN_NAME
     );

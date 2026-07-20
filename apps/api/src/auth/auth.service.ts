@@ -40,7 +40,9 @@ export class AuthService {
     name: string,
     pin: string,
   ): Promise<AuthenticatedUserDto> {
-    const user = await this.usersService.findByName(name);
+    const user = this.usersService.isAdminAlias(name)
+      ? await this.usersService.findAdminUser()
+      : await this.usersService.findByName(name);
     if (!user?.pinHash) {
       throw new UnauthorizedException('PIN inválido');
     }

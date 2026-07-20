@@ -8,7 +8,7 @@ import { ApiError, apiClient } from '@/lib/api-client';
 import type { UserSummaryDto } from '@casa/shared-types';
 
 const GUEST_NAME = 'Visitante';
-const ADMIN_NAME = 'adm';
+const ADMIN_NAME = 'Administrador';
 const ADMIN_LABEL = 'ADM';
 
 export default function LoginPage() {

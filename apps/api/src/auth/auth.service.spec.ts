@@ -15,12 +15,14 @@ describe('AuthService', () => {
   const usersService = {
     findByEmail: jest.fn(),
     findByName: jest.fn(),
+    findAdminUser: jest.fn(),
+    isAdminAlias: jest.fn(),
     findById: jest.fn(),
     toAuthenticatedUser: jest.fn((currentUser) => ({
       id: currentUser.id,
       name: currentUser.name,
       email: currentUser.email,
-      isAdmin: currentUser.email === 'admin@example.com' || currentUser.name === 'Fred',
+      isAdmin: currentUser.email === 'admin@example.com' || currentUser.name === 'Administrador',
     })),
   };
   const config = {
@@ -72,15 +74,24 @@ describe('AuthService', () => {
   });
 
   describe('validatePinCredentials', () => {
-    it('returns the authenticated user when the PIN is valid', async () => {
+    it('returns the authenticated admin when the admin PIN is valid', async () => {
+      usersService.isAdminAlias.mockReturnValueOnce(true);
+      usersService.findAdminUser.mockResolvedValueOnce({ ...user, pinHash: bcrypt.hashSync('1234', 10) });
+      const result = await authService.validatePinCredentials('Administrador', '1234');
+      expect(result).toEqual({ id: user.id, name: user.name, email: user.email, isAdmin: true });
+    });
+
+    it('returns the authenticated user when a household PIN is valid', async () => {
+      usersService.isAdminAlias.mockReturnValueOnce(false);
       usersService.findByName.mockResolvedValueOnce({ ...user, pinHash: bcrypt.hashSync('1234', 10) });
-      const result = await authService.validatePinCredentials('Admin', '1234');
+      const result = await authService.validatePinCredentials('Ana', '1234');
       expect(result).toEqual({ id: user.id, name: user.name, email: user.email, isAdmin: true });
     });
 
     it('throws when the PIN does not match', async () => {
-      usersService.findByName.mockResolvedValueOnce({ ...user, pinHash: bcrypt.hashSync('1234', 10) });
-      await expect(authService.validatePinCredentials('Admin', '9999')).rejects.toThrow(UnauthorizedException);
+      usersService.isAdminAlias.mockReturnValueOnce(true);
+      usersService.findAdminUser.mockResolvedValueOnce({ ...user, pinHash: bcrypt.hashSync('1234', 10) });
+      await expect(authService.validatePinCredentials('Administrador', '9999')).rejects.toThrow(UnauthorizedException);
     });
   });
 
