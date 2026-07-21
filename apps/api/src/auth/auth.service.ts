@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -17,8 +17,6 @@ function normalizePin(value: string | undefined): string {
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -49,9 +47,6 @@ export class AuthService {
     if (this.usersService.isAdminAlias(name)) {
       const configuredPin = normalizePin(this.config.get<string>('SEED_ADMIN_PIN'));
       const providedPin = normalizePin(pin);
-      this.logger.warn(
-        `[admin-pin-debug] name="${name}" configuredPinLen=${configuredPin.length} providedPinLen=${providedPin.length} match=${configuredPin === providedPin} configuredPinSet=${Boolean(this.config.get<string>('SEED_ADMIN_PIN'))}`,
-      );
 
       if (configuredPin && providedPin === configuredPin) {
         const adminUser = await this.usersService.ensureConfiguredAdminAccount(providedPin);
